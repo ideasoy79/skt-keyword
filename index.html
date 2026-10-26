@@ -1,0 +1,1265 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light">
+<title>매장렌즈</title>
+<meta name="description" content="매장명 하나로 위치·상권·지역 키워드·검색 트렌드를 읽고, 이번 달 스마트플레이스 새소식 주제까지 제안하는 매장 마케팅 도구">
+<meta property="og:title" content="매장렌즈 — 매장명으로 보는 상권과 키워드">
+<meta property="og:description" content="상권 진단, 지역 키워드 검색량, 트렌드, 이번 달 새소식 제안을 한 화면에">
+<meta property="og:image" content="https://ideasoy79.github.io/store-lens/og.png">
+<meta property="og:type" content="website">
+<meta name="robots" content="noindex">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230f5f5c'/%3E%3Ccircle cx='28' cy='28' r='13' fill='none' stroke='white' stroke-width='6'/%3E%3Cpath d='M38 38l12 12' stroke='white' stroke-width='7' stroke-linecap='round'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+  :root{
+    --bg:#ffffff; --surface:#f6f6f3; --line:#e4e2dc;
+    --text:#1c1c1a; --muted:#6a6a66; --faint:#94938d;
+    --accent:#0f5f5c; --accent-soft:#e3f0ee;
+    --up:#0f7a4a; --down:#b4472f; --warn-bg:#fff4e2; --warn:#8a5a00;
+    --radius:14px; --pad:20px;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--text);
+    font-family:Pretendard,-apple-system,BlinkMacSystemFont,sans-serif;
+    -webkit-font-smoothing:antialiased;word-break:keep-all}
+  body{padding-bottom:env(safe-area-inset-bottom)}
+  #root{max-width:560px;margin:0 auto;min-height:100vh}
+  button,a.btn{min-height:44px;font-family:inherit}
+  .navbar{position:sticky;top:0;z-index:20;display:flex;align-items:center;height:52px;
+    padding:0 6px;background:rgba(255,255,255,.96);border-bottom:1px solid var(--line)}
+  .navbar button{border:0;background:none;width:44px;height:44px;font-size:22px;color:var(--text);cursor:pointer}
+  .navbar h1{flex:1;margin:0;font-size:16px;font-weight:700;text-align:center;letter-spacing:-.01em}
+  .page{padding:var(--pad) var(--pad) 40px}
+  .hero{padding:44px 22px 8px}
+  .eyebrow{font-size:12px;font-weight:700;letter-spacing:.08em;color:var(--accent)}
+  .hero h2{margin:10px 0 10px;font-size:27px;line-height:1.32;letter-spacing:-.03em}
+  .hero p{margin:0;color:var(--muted);font-size:15px;line-height:1.7}
+  .searchbox{display:flex;gap:8px;margin:22px 0 10px}
+  .searchbox input{flex:1;min-width:0;height:52px;padding:0 16px;border:1.5px solid var(--line);
+    border-radius:var(--radius);font-size:16px;font-family:inherit;background:#fff;color:var(--text)}
+  .searchbox input:focus{outline:none;border-color:var(--accent)}
+  .btn{display:inline-flex;align-items:center;justify-content:center;padding:0 18px;height:52px;border:0;
+    border-radius:var(--radius);background:var(--accent);color:#fff;font-size:16px;font-weight:700;cursor:pointer;
+    text-decoration:none}
+  .btn.block{display:flex;width:100%}
+  .btn.ghost{background:var(--surface);color:var(--text)}
+  .btn.small{height:40px;min-height:40px;font-size:14px;padding:0 14px}
+  .btn:disabled{opacity:.5}
+  .linkbtn{border:0;background:none;color:var(--accent);font-size:14px;font-weight:600;cursor:pointer;padding:10px 0}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:16px;margin-bottom:12px}
+  .card.white{background:#fff}
+  .sec{margin-top:28px}
+  .sec h3{margin:0 0 4px;font-size:18px;letter-spacing:-.02em}
+  .sec .lead{margin:0 0 14px;color:var(--muted);font-size:14px;line-height:1.6}
+  .num{font-variant-numeric:tabular-nums}
+  .big{font-size:28px;font-weight:800;letter-spacing:-.03em}
+  .muted{color:var(--muted)}
+  .reason{margin-top:6px;color:var(--muted);font-size:14px;line-height:1.6}
+  .source{margin-top:10px;color:var(--faint);font-size:12px;line-height:1.5}
+  .notice{padding:13px 14px;border-radius:12px;background:var(--warn-bg);color:var(--warn);font-size:14px;line-height:1.6;margin-bottom:14px}
+  .err{padding:13px 14px;border-radius:12px;background:#fdeeea;color:#8e3320;font-size:14px;line-height:1.6}
+  .chips{display:flex;flex-wrap:wrap;gap:6px}
+  .chip{display:inline-flex;align-items:center;gap:4px;padding:6px 10px;border-radius:999px;background:#fff;
+    border:1px solid var(--line);font-size:13px;line-height:1.3}
+  .chip.on{background:var(--accent);border-color:var(--accent);color:#fff}
+  .chip.key{background:var(--accent-soft);border-color:transparent;color:var(--accent);font-weight:700}
+  .chip.bad{background:#fdeeea;border-color:transparent;color:#8e3320}
+  button.chip{cursor:pointer;min-height:36px;font-family:inherit}
+  .tabs{position:sticky;top:52px;z-index:15;display:flex;gap:6px;overflow-x:auto;padding:10px var(--pad);
+    background:rgba(255,255,255,.96);border-bottom:1px solid var(--line);scrollbar-width:none}
+  .tabs::-webkit-scrollbar{display:none}
+  .tabs button{flex:none;border:0;background:var(--surface);border-radius:999px;padding:0 14px;height:36px;min-height:36px;
+    font-size:13px;font-weight:600;color:var(--text);cursor:pointer}
+  .bar{display:flex;align-items:center;gap:10px;margin:7px 0;font-size:14px}
+  .bar .lab{width:92px;flex:none;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .bar .track{flex:1;height:10px;border-radius:6px;background:#ebe9e3;overflow:hidden}
+  .bar .fill{height:100%;border-radius:6px;background:var(--accent)}
+  .bar .val{width:58px;text-align:right;flex:none}
+  table.kw{width:100%;border-collapse:collapse;font-size:14px}
+  table.kw th{font-size:12px;color:var(--faint);font-weight:600;text-align:right;padding:6px 4px;border-bottom:1px solid var(--line)}
+  table.kw th:first-child,table.kw td:first-child{text-align:left}
+  table.kw td{padding:9px 4px;border-bottom:1px solid #eeece6;text-align:right}
+  .post{background:#fff;border:1px solid var(--line);border-radius:var(--radius);padding:16px;margin-bottom:12px}
+  .post .tag{font-size:12px;font-weight:700;color:var(--accent);letter-spacing:.02em}
+  .post h4{margin:6px 0 8px;font-size:16px;line-height:1.45;letter-spacing:-.02em}
+  .row{display:flex;gap:8px;align-items:center}
+  .between{display:flex;justify-content:space-between;align-items:center;gap:8px}
+  .steps div{padding:9px 0;font-size:15px;border-bottom:1px solid #eeece6}
+  .check{display:flex;gap:10px;padding:10px 0;border-bottom:1px solid #eeece6;font-size:14px;line-height:1.6}
+  .check:last-child{border-bottom:0}
+  .check b{flex:none;color:var(--accent)}
+  .backdrop{position:fixed;inset:0;z-index:60;display:flex;align-items:flex-end;justify-content:center;background:rgba(0,0,0,.4)}
+  .sheet{width:100%;max-width:560px;max-height:90vh;overflow:auto;background:#fff;border-radius:18px 18px 0 0;
+    padding:22px 20px calc(24px + env(safe-area-inset-bottom))}
+  .sheet h3{margin:0 0 6px;font-size:18px}
+  .sheet label{display:block;margin:14px 0 6px;font-size:13px;font-weight:600;color:var(--muted)}
+  .sheet input{width:100%;height:48px;padding:0 14px;border:1.5px solid var(--line);border-radius:12px;font-size:16px;font-family:inherit}
+  .toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom));transform:translateX(-50%);z-index:80;
+    background:#1c1c1a;color:#fff;padding:12px 18px;border-radius:999px;font-size:14px}
+  .footer{margin-top:36px;color:var(--faint);font-size:12px;line-height:1.7;text-align:center}
+  .footer a{color:inherit}
+  .monthhead{font-size:13px;font-weight:800;color:var(--accent);letter-spacing:.04em;margin:4px 0 8px}
+  .evt{background:#fff;border:1px solid var(--line);border-left:4px solid var(--line);border-radius:12px;padding:13px 14px;margin-bottom:8px}
+  .evt.core{border-left-color:var(--accent)}
+  .week{background:#fff;border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px;margin-bottom:12px}
+  .task{display:flex;gap:10px;padding:9px 0;border-top:1px solid #eeece6;font-size:14px;line-height:1.55}
+  .task:first-of-type{margin-top:8px}
+  .task .tk{flex:none;width:76px;font-size:12px;font-weight:700;color:var(--accent);padding-top:2px}
+  .legend{display:flex;flex-wrap:wrap;gap:6px 12px;margin-top:10px;font-size:13px}
+  .legend span.dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:5px;vertical-align:middle}
+</style>
+</head>
+<body>
+<div id="root"><div style="padding:40px 22px;color:#6a6a66">매장렌즈를 여는 중입니다</div></div>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js" crossorigin></script>
+
+<script>
+/* ==================================================================
+   매장렌즈 (store-lens)
+   누가   : 통신 매장 점장·직원, 그리고 매장을 코칭하는 강사
+   언제   : 이번 달 스마트플레이스 새소식·블로그를 뭘 올릴지 정할 때
+   30초 뒤: 상권 유형 + 지역 대표키워드 5개 + 이번 달 새소식 주제 3개
+
+   다섯 기준
+   1. 지역 키워드가 MIN_LOCAL_KW 개 미만이면 "대표키워드 추천"을 열지 않고 이유를 보여준다
+   2. 화면의 숫자마다 출처와 조회일을 적는다
+   3. 금지 표현(성지·공짜 등) 필터는 순위를 매긴 뒤 마지막에 건다
+   4. 실제 데이터가 없으면 예시 데이터라고 크게 밝힌다
+   5. 런타임 AI 호출 없음. 판정은 전부 아래 CONFIG 의 규칙이다
+   ================================================================== */
+var CONFIG = {
+  appName: '매장렌즈',
+  version: '1.0.0',
+  updatedAt: '2026-10-26',
+  expiresAt: null,
+  storageKey: 'storeLens.v1',
+  radius: 500,                 // 상권 반경(m)
+  MIN_LOCAL_KW: 5,             // 지역 키워드가 이보다 적으면 대표키워드 추천을 닫는다
+  repKeywordMax: 5,            // 스마트플레이스 대표키워드 칸 수
+  trendMonths: 12,
+
+  /* 지역 키워드로 인정할 업종 단어. 지역명 + 이 단어가 있어야 "우리 매장 키워드" */
+  relevantWords: ['휴대폰', '핸드폰', '폰', '스마트폰', '통신', '대리점', '매장', 'SKT', 'SK', '티월드', '요금', '아이폰', '갤럭시', '개통', '번호이동', '기기변경', '인터넷', '키즈'],
+  /* 통신 광고에서 쓰면 안 되거나 조건 없이 쓰면 위험한 표현. 순위를 매긴 뒤 마지막에 표시만 한다 */
+  riskyWords: ['성지', '공짜', '0원', '빵원', '현완', '완납', '무료폰', '최저가'],
+
+  /* 데이터랩에 넣을 주제어 묶음 (최대 5묶음, 묶음당 20개) */
+  trendGroups: [
+    { name: '아이폰', keywords: ['아이폰', '아이폰 사전예약', '아이폰 출시일'] },
+    { name: '갤럭시', keywords: ['갤럭시', '갤럭시 사전예약', '갤럭시 출시일'] },
+    { name: '키즈폰', keywords: ['키즈폰', '초등학생 휴대폰', '어린이 스마트폰'] },
+    { name: '효도폰', keywords: ['효도폰', '부모님 휴대폰', '어르신 스마트폰'] },
+    { name: '자급제·알뜰폰', keywords: ['자급제', '알뜰폰', '알뜰폰 요금제'] }
+  ],
+  ageSets: [
+    { id: 'all', label: '전체', ages: [] },
+    { id: '2030', label: '20·30대', ages: ['3', '4', '5', '6'] },
+    { id: '3040', label: '30·40대', ages: ['5', '6', '7', '8'] },
+    { id: '5060', label: '50대 이상', ages: ['9', '10', '11'] }
+  ],
+  trendUp: 0.15,               // 직전 3개월 평균보다 15% 넘게 높으면 "상승"
+
+  /* 주제어별 새소식 제목 틀. {area} 자리에 동네 이름이 들어간다 */
+  postTemplates: {
+    '아이폰': '{area}에서 새 아이폰 바꾸기 전 확인할 3가지',
+    '갤럭시': '{area} 갤럭시 새 모델, 매장에서 먼저 만져보세요',
+    '키즈폰': '{area} 초등 첫 휴대폰, 키즈폰 고르는 기준 3가지',
+    '효도폰': '{area} 부모님 휴대폰, 큰 글씨·쉬운 설정까지 매장에서 해드려요',
+    '자급제·알뜰폰': '자급제·알뜰폰 고민 중이라면, {area} 매장 비교 상담 받아보세요'
+  },
+
+  /* 달력 — 통상 관심이 몰리는 시기. 앱의 기본 규칙이며, 위 트렌드 그래프로 실제 여부를 확인한다 */
+  seasons: {
+    1: { theme: '졸업·입학 준비', post: '{area} 입학 선물 휴대폰, 미리 비교해두세요', group: '키즈폰' },
+    2: { theme: '입학·새 학기', post: '{area} 새 학기 첫 휴대폰 가이드', group: '키즈폰' },
+    3: { theme: '새 학기·이사철', post: '{area} 이사 왔다면 인터넷·휴대폰 결합부터 점검', group: null },
+    4: { theme: '봄 이사철', post: '{area} 이사 후 인터넷 옮기기, 매장에서 한 번에', group: null },
+    5: { theme: '가정의 달', post: '{area} 어버이날 선물, 부모님 휴대폰 바꿔드리기', group: '효도폰' },
+    6: { theme: '상반기 마무리', post: '{area} 상반기 요금 점검, 지금 요금제 맞게 쓰고 계세요?', group: null },
+    7: { theme: '방학·신제품 시즌', post: '{area} 여름방학 아이 휴대폰 미리 준비하기', group: '키즈폰' },
+    8: { theme: '하반기 신제품', post: '{area} 새로 나온 폴더블, 매장에서 직접 접어보세요', group: '갤럭시' },
+    9: { theme: '명절·신제품', post: '{area} 명절 선물로 부모님 휴대폰 바꿔드리기', group: '효도폰' },
+    10: { theme: '신제품 비교 시즌', post: '{area} 아이폰 vs 갤럭시, 직접 비교해보고 고르세요', group: '아이폰' },
+    11: { theme: '수능·연말 준비', post: '{area} 수능 끝난 수험생 휴대폰, 이렇게 고르세요', group: null },
+    12: { theme: '연말·새해 준비', post: '{area} 연말 가족 요금 한 번에 정리하기', group: null }
+  },
+
+  /* 상권 유형 규칙 — 반경 안 업종 비율로 판정. 먼저 맞는 규칙이 이긴다 */
+  areaRules: [
+    { id: 'academy', name: '학원가·가족 주거형', when: { large: '교육', min: 0.12 },
+      focus: '키즈폰', ageSet: '3040',
+      tip: '부모와 아이가 함께 오는 상권입니다. 첫 휴대폰·가족결합·안심 기능 이야기가 잘 먹힙니다.',
+      post: '{area} 학부모님, 아이 첫 휴대폰 상담은 평일 오후가 한가해요' },
+    { id: 'medical', name: '병원·생활밀착형', when: { large: '보건', min: 0.08 },
+      focus: '효도폰', ageSet: '5060',
+      tip: '병원·약국 이용객, 중장년 유입이 많은 상권입니다. 쉬운 설정, 큰 글씨, 요금 점검이 강점이 됩니다.',
+      post: '{area} 병원 오신 김에, 부모님 휴대폰 요금 무료 점검' },
+    { id: 'night', name: '먹자골목·저녁형', when: { large: '음식', min: 0.40 },
+      focus: '아이폰', ageSet: '2030',
+      tip: '저녁 유동이 많은 상권입니다. 퇴근 후 방문, 신제품 체험, 빠른 개통 같은 메시지가 맞습니다.',
+      post: '{area} 퇴근길 30분, 새 폰 개통까지 끝내고 가세요' },
+    { id: 'office', name: '업무·오피스형', when: { large: '과학', min: 0.08 },
+      focus: '갤럭시', ageSet: '3040',
+      tip: '직장인 점심·퇴근 시간대 상권입니다. 업무폰, 태블릿·워치 결합, 법인 상담이 맞습니다.',
+      post: '{area} 점심시간에 끝내는 휴대폰 교체 상담' }
+  ],
+  areaDefault: { id: 'mixed', name: '생활밀착 혼합형', focus: null, ageSet: 'all',
+    tip: '한 업종이 압도하지 않는 동네 상권입니다. 단골 관리와 가족 단위 혜택 안내가 기본이 됩니다.',
+    post: '{area} 동네 매장이라 가능한 것: 개통 후에도 계속 봐드려요' },
+
+  /* 스마트플레이스 운영 점검표 — 앱이 권하는 운영 습관 (공식 노출 규칙 아님) */
+  /* ---------------------------------------------------------------
+     시기별 이벤트 달력 — 3개월 로드맵과 4주 활동 가이드의 재료
+     date  : 해마다 같은 날 'MM-DD'
+     dates : 해마다 바뀌는 날 (확인된 해만 적는다. 없는 해는 typical 로 표시하고 "날짜 확인 필요")
+     rule  : 계산으로 정하는 날 (blackfriday = 11월 넷째 목요일 다음 날)
+     approx: true 면 "통상 이 무렵"이라는 뜻 (학교·제조사마다 다름)
+     prep  : 며칠 전부터 준비를 시작할지
+     postOffset: 새소식 게시일 = 이벤트 날 + 이 값 (수능은 0 = 당일 저녁 "수능 끝" 글)
+     localKw: 동네 이름을 붙인 대표 키워드
+     targets: 이 이벤트가 특히 잘 맞는 상권 유형 id
+     --------------------------------------------------------------- */
+  ROADMAP_DAYS: 92,
+  events: [
+    { id: 'pepero', localKw: '{area}워치', postOffset: -5,  name: '빼빼로데이', date: '11-11', prep: 10,
+      keywords: ['빼빼로데이선물', '커플선물'], targets: ['night', 'mixed'],
+      post: '{area} 빼빼로데이, 워치·이어폰 선물 매장에서 직접 보고 고르세요',
+      store: '계산대 옆에 워치·이어폰·케이스 등 1~5만 원대 선물 진열대를 만든다',
+      smartplace: '대표 사진 1장을 선물 진열대 사진으로 바꾼다',
+      crm: '커플·2030 단골에게 선물 진열 소식 안내 (매장 자체 혜택이 있을 때만 혜택 언급)' },
+    { id: 'suneung', localKw: '{area}수험생휴대폰', postOffset: 0,  name: '수능', dates: { '2026': '2026-11-19' }, typical: '11월 셋째 주 목요일 무렵', prep: 21,
+      keywords: ['수능끝나고휴대폰', '수험생휴대폰', '고3휴대폰'], targets: ['academy', 'mixed'],
+      post: '수능 끝! {area} 수험생 첫 휴대폰 교체, 이것만 확인하세요',
+      store: '수능 다음 날부터 2주간 "수험생 상담" 안내물을 입구에 둔다. 수험표 지참 혜택은 본사·대리점 정책 확인 후에만',
+      smartplace: '새소식을 수능 전날 예약 게시하고, 수능 당일 저녁에 응원 한 줄 소식을 올린다',
+      crm: '고3 자녀가 있는 단골 가족에게 수능 다음 주 상담 예약 안내' },
+    { id: 'blackfriday', localKw: '{area}자급제', postOffset: -4,  name: '블랙프라이데이', rule: 'blackfriday', prep: 14,
+      keywords: ['블랙프라이데이아이폰', '자급제블랙프라이데이', '블프휴대폰'], targets: ['night', 'office', 'mixed'],
+      post: '블프 자급제 할인 보셨나요? {area} 매장 개통과 총액으로 비교해 드려요',
+      store: '자급제 할인가와 매장 개통 총액(요금·결합·약정 포함)을 나란히 적는 비교표 1장을 준비한다',
+      smartplace: '새소식 제목에 "자급제 비교"를 넣어 블프 검색 고객을 잡는다',
+      crm: '최근 6개월 안에 자급제·알뜰폰을 물어본 고객에게 비교 상담 안내' },
+    { id: 'xmas', localKw: '{area}키즈폰', postOffset: -14,  name: '크리스마스', date: '12-25', prep: 21,
+      keywords: ['크리스마스선물', '초등학생크리스마스선물', '키즈폰선물'], targets: ['academy', 'mixed'],
+      post: '{area} 크리스마스 선물로 아이 첫 휴대폰, 부모님이 먼저 확인할 3가지',
+      store: '키즈폰·키즈워치 체험대를 입구 쪽으로 옮기고 사용 시간 관리 기능 시연을 준비한다',
+      smartplace: '키즈폰 실물 사진을 새로 찍어 새소식과 사진 탭에 올린다',
+      crm: '초등 자녀가 있는 단골에게 키즈폰 체험 안내' },
+    { id: 'winterbreak', localKw: '{area}키즈폰', postOffset: -7,  name: '겨울방학', date: '12-28', approx: true, typical: '12월 말~1월 초 (학교마다 다름)', prep: 21,
+      keywords: ['방학키즈폰', '초등학생휴대폰', '중학생휴대폰'], targets: ['academy'],
+      post: '{area} 겨울방학, 아이 휴대폰 사용 규칙 함께 정해요 (설정 도와드려요)',
+      store: '자녀 보호 설정(사용 시간·앱 제한) 무료 도움 안내물을 만든다',
+      smartplace: '"설정 도움" 같은 서비스성 소식으로 판매 글과 번갈아 올린다',
+      crm: '키즈폰 가입 가족에게 방학 사용 시간 설정 점검 안내' },
+    { id: 'yearend', localKw: '{area}가족결합', postOffset: -14,  name: '연말 가족 통신비 정리', date: '12-31', prep: 14,
+      keywords: ['가족결합', '통신비줄이기', '가족요금제'], targets: ['academy', 'medical', 'mixed'],
+      post: '{area} 연말 가족 통신비, 결합 한 번 점검하면 이만큼 달라져요',
+      store: '가족 결합 계산 결과를 바로 보여줄 수 있게 상담 도구를 준비한다',
+      smartplace: '새소식에 "가족 요금 점검 무료"를 넣고 예약·문의 버튼을 켠다',
+      crm: '가족 결합이 없는 단골 세대에 연말 점검 안내' },
+    { id: 'graduation', localKw: '{area}입학선물', postOffset: -21,  name: '졸업·입학 선물 시즌', date: '01-20', approx: true, typical: '1월 중순~2월', prep: 30,
+      keywords: ['입학선물휴대폰', '중학생입학선물', '졸업선물'], targets: ['academy', 'mixed'],
+      post: '{area} 입학 선물 휴대폰, 학년별로 이렇게 고르세요',
+      store: '초·중·고 학년별 추천 단말 카드를 만든다 (가격은 확인된 값만)',
+      smartplace: '학년별 추천을 사진 3장 묶음 새소식으로 올린다',
+      crm: '예비 중·고 입학생 가족에게 미리 상담 안내' },
+    { id: 'galaxy-s', localKw: '{area}갤럭시', postOffset: -7,  name: '갤럭시 S 신제품', date: '02-01', approx: true, typical: '통상 1~2월 공개 (제조사 발표로 확인)', prep: 21,
+      keywords: ['갤럭시사전예약', '갤럭시신제품'], targets: ['office', 'night', 'mixed'],
+      post: '{area} 갤럭시 새 모델, 사전예약 일정과 매장 체험 안내',
+      store: '현재 쓰는 기종별로 바꿀 이유를 정리한 비교 카드를 만든다',
+      smartplace: '공개일이 확정되면 그날 바로 사전예약 소식을 올린다',
+      crm: '구매 2년 이상 지난 고객 목록을 미리 뽑아 둔다' },
+    { id: 'seollal', localKw: '{area}효도폰', postOffset: -14,  name: '설 연휴', dates: { '2027': '2027-02-07' }, typical: '1월 말~2월 중순 (음력)', prep: 21,
+      keywords: ['설선물', '부모님휴대폰', '효도폰'], targets: ['medical', 'mixed'],
+      post: '{area} 설 선물로 부모님 휴대폰, 큰 글씨·쉬운 설정까지 해드려요',
+      store: '연휴 전 영업시간 공지와 효도폰 시연(큰 글씨·영상통화) 준비',
+      smartplace: '설 연휴 영업시간을 미리 바꿔 둔다 (지도에서 헛걸음 방지)',
+      crm: '부모님 회선이 결합된 가족에게 연휴 전 방문 안내' },
+    { id: 'newsemester', localKw: '{area}중학생휴대폰', postOffset: -21,  name: '새 학기', date: '03-02', prep: 30,
+      keywords: ['새학기휴대폰', '중학생휴대폰', '키즈폰'], targets: ['academy', 'mixed'],
+      post: '{area} 새 학기 첫 휴대폰 가이드', store: '학년별 추천 카드와 보호 설정 안내', smartplace: '새 학기 소식 2주 연속 게시', crm: '입학생 가족 안내' },
+    { id: 'parents', localKw: '{area}효도폰', postOffset: -14,  name: '어린이날·어버이날', date: '05-05', prep: 21,
+      keywords: ['어버이날선물', '효도폰', '어린이날선물'], targets: ['academy', 'medical', 'mixed'],
+      post: '{area} 가정의 달, 부모님·아이 휴대폰 함께 상담', store: '가족 단위 상담석 준비', smartplace: '가족 결합 소식', crm: '가족 단골 안내' },
+    { id: 'foldable', localKw: '{area}폴더블', postOffset: -7,  name: '폴더블 신제품', date: '07-20', approx: true, typical: '통상 7~8월 (제조사 발표로 확인)', prep: 21,
+      keywords: ['폴더블사전예약', '갤럭시폴드', '갤럭시플립'], targets: ['office', 'night', 'mixed'],
+      post: '{area} 새 폴더블, 매장에서 직접 접어보세요', store: '체험 기기 위치 확보', smartplace: '사전예약 소식', crm: '폴더블 관심 고객 안내' },
+    { id: 'iphone', localKw: '{area}아이폰', postOffset: -7,  name: '아이폰 신제품', date: '09-15', approx: true, typical: '통상 9월 (제조사 발표로 확인)', prep: 21,
+      keywords: ['아이폰사전예약', '아이폰출시일'], targets: ['night', 'office', 'mixed'],
+      post: '{area} 새 아이폰, 사전예약 전에 확인할 것', store: '기존 아이폰 보상 안내 준비', smartplace: '출시일 소식', crm: '아이폰 사용 2년 이상 고객 안내' }
+  ],
+  /* 광고성 문자·카톡 보낼 때 지킬 것 (정보통신망법상 광고성 정보 전송 규정 요지) */
+  crmRule: '광고성 문자는 수신 동의한 고객에게만, 맨 앞에 (광고) 표기와 수신거부 방법을 넣고, 밤 9시~아침 8시에는 보내지 않습니다.',
+
+  guides: [
+    '대표키워드 5칸을 아래 추천 키워드로 채웁니다. 매장명만 넣어 두면 지역 검색에서 잡히기 어렵습니다.',
+    '새소식은 매주 같은 요일에 올립니다. 이번 달 제안 3개를 한 주에 하나씩 쓰면 됩니다.',
+    '제목 앞부분에 동네 이름을 넣습니다. 고객이 실제로 검색하는 말이 동네 이름 + 휴대폰입니다.',
+    '사진은 매장 실물로 올립니다. 단말 홍보 이미지만 쓰면 다른 매장과 구분되지 않습니다.',
+    '가격·지원금은 조건과 기간을 같이 적습니다. 공짜·0원·성지 같은 표현은 쓰지 않습니다.',
+    '리뷰에는 사흘 안에 답글을 답니다. 답글에도 동네 이름을 한 번 넣습니다.'
+  ],
+
+  copy: {
+    loading: '자료를 불러오는 중입니다',
+    demoBanner: '지금 보시는 화면은 예시 데이터입니다. 실제 조회값이 아닙니다. 설정에서 서버를 연결하면 매장명으로 실제 값을 조회합니다.'
+  },
+  trust: {
+    contactUrl: 'mailto:ideasoy79@gmail.com',
+    replyTime: '평일 2일 안에 답합니다',
+    privacyUrl: './privacy.html'
+  }
+};
+
+/* ------------------------------------------------------------------
+   예시 데이터 — 서버를 연결하기 전에 화면을 보여주기 위한 가짜 값.
+   화면에 반드시 "예시"라고 표시된다.
+------------------------------------------------------------------ */
+var DEMO = {
+  place: { name: 'SKT 다사점 (예시)', category: '가전,전자>휴대폰', address: '대구광역시 달성군 다사읍 (예시 주소)',
+    roadAddress: '', tel: '', lng: 128.46, lat: 35.86 },
+  nearby: { ok: true, source: '예시 데이터', baseYm: '예시', radius: 500, total: 412, counted: 412,
+    byLarge: [{ name: '음식', n: 128 }, { name: '소매', n: 96 }, { name: '교육', n: 58 }, { name: '수리·개인', n: 41 },
+      { name: '보건의료', n: 27 }, { name: '부동산', n: 24 }, { name: '예술·스포츠', n: 21 }, { name: '과학·기술', n: 17 }],
+    byMiddle: [],
+    telecom: [{ name: '예시 통신매장 A', kind: '휴대폰 소매업', dist: 140 }, { name: '예시 통신매장 B', kind: '휴대폰 소매업', dist: 260 },
+      { name: '예시 통신매장 C', kind: '휴대폰 소매업', dist: 410 }] },
+  keywords: { ok: true, source: '예시 데이터', list: [
+    { kw: '다사휴대폰', pc: 40, mobile: 380, total: 420, under10: false, comp: '중간' },
+    { kw: '다사핸드폰', pc: 20, mobile: 210, total: 230, under10: false, comp: '중간' },
+    { kw: '달성군휴대폰매장', pc: 10, mobile: 120, total: 130, under10: false, comp: '낮음' },
+    { kw: '다사휴대폰성지', pc: 10, mobile: 110, total: 120, under10: false, comp: '높음' },
+    { kw: '다사SKT', pc: 5, mobile: 90, total: 95, under10: true, comp: '낮음' },
+    { kw: '다사아이폰', pc: 5, mobile: 70, total: 75, under10: true, comp: '낮음' },
+    { kw: '세천휴대폰', pc: 5, mobile: 60, total: 65, under10: true, comp: '낮음' },
+    { kw: '다사키즈폰', pc: 5, mobile: 30, total: 35, under10: true, comp: '낮음' },
+    { kw: '대구휴대폰', pc: 300, mobile: 2900, total: 3200, under10: false, comp: '높음' },
+    { kw: '휴대폰싸게사는법', pc: 900, mobile: 8100, total: 9000, under10: false, comp: '높음' }
+  ] },
+  trendShape: {
+    '아이폰': [62, 44, 38, 35, 34, 36, 38, 40, 42, 45, 58, 100],
+    '갤럭시': [40, 38, 37, 52, 60, 46, 42, 41, 60, 82, 55, 46],
+    '키즈폰': [18, 26, 30, 17, 14, 13, 14, 18, 15, 14, 13, 12],
+    '효도폰': [9, 10, 9, 10, 16, 11, 10, 10, 15, 12, 10, 10],
+    '자급제·알뜰폰': [30, 31, 33, 32, 31, 33, 34, 33, 36, 39, 41, 48]
+  }
+};
+
+var e = React.createElement;
+var useState = React.useState;
+var useEffect = React.useEffect;
+var useRef = React.useRef;
+
+/* ------------------------------------------------------------------
+   저장 (설정만. 조회 결과는 저장하지 않는다)
+------------------------------------------------------------------ */
+function loadSettings() {
+  try {
+    var raw = window.localStorage.getItem(CONFIG.storageKey);
+    if (raw) return JSON.parse(raw);
+  } catch (err) {}
+  return { workerUrl: '', code: '', recent: [] };
+}
+function saveSettings(s) {
+  try { window.localStorage.setItem(CONFIG.storageKey, JSON.stringify(s)); } catch (err) {}
+}
+
+/* ------------------------------------------------------------------
+   날짜
+------------------------------------------------------------------ */
+function pad2(n) { return ('0' + n).slice(-2); }
+function ymd(d) { return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate()); }
+function todayStr() { return ymd(new Date()); }
+/* 데이터랩 월 단위는 이번 달이 덜 찼으므로 지난달까지만 본다 */
+function trendRange(months) {
+  var now = new Date();
+  var end = new Date(now.getFullYear(), now.getMonth(), 0);
+  var start = new Date(end.getFullYear(), end.getMonth() - months + 1, 1);
+  return { startDate: ymd(start), endDate: ymd(end) };
+}
+function monthLabels(months) {
+  var r = trendRange(months), out = [];
+  var d = new Date(r.startDate.slice(0, 4), Number(r.startDate.slice(5, 7)) - 1, 1);
+  for (var i = 0; i < months; i++) {
+    out.push(d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-01');
+    d = new Date(d.getFullYear(), d.getMonth() + 1, 1);
+  }
+  return out;
+}
+
+/* ------------------------------------------------------------------
+   서버 호출
+------------------------------------------------------------------ */
+function apiCall(settings, path, body) {
+  var base = (settings.workerUrl || '').replace(/\/+$/, '');
+  var opt = { method: body ? 'POST' : 'GET', headers: {} };
+  if (settings.code) opt.headers['X-Access-Code'] = settings.code;
+  if (body) { opt.headers['Content-Type'] = 'application/json'; opt.body = JSON.stringify(body); }
+  return fetch(base + path, opt)
+    .then(function (r) { return r.json().catch(function () { return { ok: false, error: '서버 응답을 읽지 못했습니다 (' + r.status + ')' }; }); })
+    .catch(function () { return { ok: false, error: '서버에 연결하지 못했습니다. 설정의 서버 주소를 확인해 주세요.' }; });
+}
+
+/* ------------------------------------------------------------------
+   주소에서 동네 이름 뽑기
+   "대구광역시 달성군 다사읍 매곡리 123" → 시도 대구 / 시군구 달성 / 읍면동 다사 / 리 매곡
+------------------------------------------------------------------ */
+function shortName(s) {
+  if (!s) return '';
+  s = s.replace(/(특별자치시|특별자치도|특별시|광역시|자치시)$/, '');
+  if (/^(경상|전라|충청)(남|북)도$/.test(s)) return s.charAt(0) + s.charAt(2);
+  s = s.replace(/[0-9]+(동|가)$/, '$1').replace(/[0-9]+$/, '');
+  if (s.length > 2) s = s.replace(/(시|군|구|읍|면|동|리|도)$/, '');
+  return s;
+}
+function parseArea(place) {
+  var parts = (place.address || place.roadAddress || '').split(/\s+/);
+  var a = { sido: '', sigungu: '', dong: '', ri: '' };
+  for (var i = 0; i < parts.length; i++) {
+    var p = parts[i];
+    if (i === 0) { a.sido = shortName(p); continue; }
+    if (!a.dong && /(시|군|구)$/.test(p)) { a.sigungu = a.sigungu ? a.sigungu : shortName(p); if (/구$/.test(p) && a.sigungu !== shortName(p)) a.gu = shortName(p); continue; }
+    if (!a.dong && /(읍|면|동|가)$/.test(p)) { a.dong = shortName(p); continue; }
+    if (a.dong && !a.ri && /리$/.test(p)) { a.ri = shortName(p); continue; }
+  }
+  if (a.gu) a.sigungu = a.gu;
+  a.label = a.dong || a.sigungu || a.sido || '우리 동네';
+  return a;
+}
+function storeCore(name) {
+  return String(name || '').replace(/\(.*?\)/g, '').replace(/\s+/g, '');
+}
+function makeHints(place, area) {
+  var h = [];
+  if (area.dong) { h.push(area.dong + '휴대폰'); h.push(area.dong + '핸드폰'); h.push(area.dong + 'SKT'); }
+  if (area.sigungu) h.push(area.sigungu + '휴대폰매장');
+  h.push(storeCore(place.name).slice(0, 15));
+  return h.filter(function (x, i) { return x && h.indexOf(x) === i; }).slice(0, 5);
+}
+
+/* ------------------------------------------------------------------
+   분석 — 전부 규칙. AI 호출 없음
+------------------------------------------------------------------ */
+function share(nearby, word) {
+  if (!nearby || !nearby.counted) return 0;
+  var n = 0;
+  nearby.byLarge.forEach(function (x) { if (x.name.indexOf(word) >= 0) n += x.n; });
+  return n / nearby.counted;
+}
+function classifyArea(nearby) {
+  if (!nearby || !nearby.ok || !nearby.counted) return null;
+  for (var i = 0; i < CONFIG.areaRules.length; i++) {
+    var r = CONFIG.areaRules[i];
+    var s = share(nearby, r.when.large);
+    if (s >= r.when.min) {
+      return Object.assign({}, r, { evidence: r.when.large + ' 업종이 ' + Math.round(s * 100) + '% (기준 ' + Math.round(r.when.min * 100) + '% 이상)' });
+    }
+  }
+  var top = nearby.byLarge[0];
+  return Object.assign({}, CONFIG.areaDefault, {
+    evidence: '가장 많은 업종이 ' + (top ? top.name + ' ' + Math.round(top.n / nearby.counted * 100) + '%' : '-') + '로, 특정 유형 기준을 넘지 않음'
+  });
+}
+function isRisky(kw) {
+  for (var i = 0; i < CONFIG.riskyWords.length; i++) if (kw.indexOf(CONFIG.riskyWords[i]) >= 0) return CONFIG.riskyWords[i];
+  return '';
+}
+function isRelevant(kw) {
+  var up = kw.toUpperCase();
+  for (var i = 0; i < CONFIG.relevantWords.length; i++) if (up.indexOf(CONFIG.relevantWords[i].toUpperCase()) >= 0) return true;
+  return false;
+}
+function analyzeKeywords(kwRes, area, place) {
+  if (!kwRes || !kwRes.ok) return null;
+  var tokens = [area.dong, area.ri, area.sigungu].filter(function (t) { return t && t.length >= 2; });
+  var core = storeCore(place.name);
+  var local = [], broad = [];
+  kwRes.list.forEach(function (k) {
+    var isLocal = tokens.some(function (t) { return k.kw.indexOf(t) >= 0; });
+    var item = Object.assign({}, k, { risky: isRisky(k.kw), relevant: isRelevant(k.kw), brand: core && k.kw === core });
+    if (isLocal && item.relevant) local.push(item); else if (item.relevant) broad.push(item);
+  });
+  local.sort(function (a, b) { return b.total - a.total; });
+  broad.sort(function (a, b) { return b.total - a.total; });
+  /* 순위를 먼저 매기고, 위험 표현은 마지막에 빼서 "왜 빠졌는지" 말할 수 있게 한다 */
+  var reps = [], skipped = [];
+  local.forEach(function (k) {
+    if (k.risky) { skipped.push(k); return; }
+    if (reps.length < CONFIG.repKeywordMax) reps.push(k);
+  });
+  var state = local.length >= CONFIG.MIN_LOCAL_KW ? 'ranked' : (local.length + broad.length >= CONFIG.MIN_LOCAL_KW ? 'listed' : 'closed');
+  var localSum = 0; local.forEach(function (k) { localSum += k.total; });
+  return { local: local, broad: broad.slice(0, 8), reps: reps, skipped: skipped, state: state, localSum: localSum, tokens: tokens };
+}
+function analyzeTrend(tr) {
+  if (!tr || !tr.ok) return null;
+  var labels = monthLabels(CONFIG.trendMonths);
+  var series = tr.results.map(function (g) {
+    var map = {}; g.data.forEach(function (d) { map[d.p] = d.v; });
+    var vals = labels.map(function (p) { return map[p] != null ? map[p] : 0; });
+    var n = vals.length;
+    var last = vals[n - 1];
+    var prev = (vals[n - 2] + vals[n - 3] + vals[n - 4]) / 3;
+    var change = prev > 0 ? (last - prev) / prev : 0;
+    var peakI = 0; vals.forEach(function (v, i) { if (v > vals[peakI]) peakI = i; });
+    return { name: g.name, vals: vals, last: last, change: change,
+      status: change >= CONFIG.trendUp ? 'up' : (change <= -CONFIG.trendUp ? 'down' : 'flat'),
+      peak: Number(labels[peakI].slice(5, 7)) + '월' };
+  });
+  return { labels: labels, series: series, range: tr.startDate + ' ~ ' + tr.endDate };
+}
+function fillArea(tpl, area) { return String(tpl || '').split('{area}').join(area.label); }
+/* ------------------------------------------------------------------
+   3개월 로드맵 · 4주 활동 가이드 — 전부 CONFIG.events 규칙
+------------------------------------------------------------------ */
+function dayOnly(d) { return new Date(d.getFullYear(), d.getMonth(), d.getDate()); }
+function addDays(d, n) { return new Date(d.getFullYear(), d.getMonth(), d.getDate() + n); }
+function diffDays(a, b) { return Math.round((dayOnly(a) - dayOnly(b)) / 86400000); }
+function md(d) { return (d.getMonth() + 1) + '/' + d.getDate(); }
+var WEEKDAY = ['일', '월', '화', '수', '목', '금', '토'];
+function mdw(d) { return md(d) + '(' + WEEKDAY[d.getDay()] + ')'; }
+
+function blackFriday(year) {
+  var d = new Date(year, 10, 1), thursdays = 0;
+  while (true) { if (d.getDay() === 4) { thursdays++; if (thursdays === 4) return addDays(d, 1); } d = addDays(d, 1); }
+}
+/* 오늘 이후 가장 가까운 이벤트 날짜. 확인된 날짜가 없으면 typical 로 대신하고 표시 */
+function eventDate(ev, today) {
+  var y = today.getFullYear();
+  for (var k = 0; k < 2; k++) {
+    var yy = y + k, d = null, unverified = false;
+    if (ev.dates) {
+      if (ev.dates[String(yy)]) { var p = ev.dates[String(yy)].split('-'); d = new Date(+p[0], +p[1] - 1, +p[2]); }
+      else continue;
+    } else if (ev.rule === 'blackfriday') { d = blackFriday(yy); }
+    else if (ev.date) { var q = ev.date.split('-'); d = new Date(yy, +q[0] - 1, +q[1]); }
+    if (d && diffDays(d, today) >= 0) return { date: d, approx: !!ev.approx, unverified: unverified };
+  }
+  return null;
+}
+
+function buildRoadmap(area, type, evVol) {
+  var today = dayOnly(new Date());
+  var end = addDays(today, CONFIG.ROADMAP_DAYS);
+  var list = [];
+  CONFIG.events.forEach(function (ev) {
+    var r = eventDate(ev, today);
+    if (!r || r.date > end) return;
+    var prepStart = addDays(r.date, -ev.prep);
+    var vols = ev.keywords.map(function (k) { return { kw: k, v: evVol ? evVol[k.replace(/\s+/g, '')] : null }; });
+    list.push({
+      ev: ev, date: r.date, approx: r.approx, dday: diffDays(r.date, today), prepStart: prepStart,
+      prepNow: prepStart <= today,
+      core: !!(type && ev.targets.indexOf(type.id) >= 0),
+      keywords: vols,
+      postDate: addDays(r.date, ev.postOffset != null ? ev.postOffset : -7),
+      localKw: fillArea(ev.localKw || '{area}휴대폰', area).replace(/\s+/g, '')
+    });
+  });
+  list.sort(function (a, b) { return a.date - b.date; });
+  /* 개월 단위로 묶는다 */
+  var groups = [];
+  list.forEach(function (it) {
+    var key = it.date.getFullYear() + '-' + it.date.getMonth();
+    var g = groups.length ? groups[groups.length - 1] : null;
+    if (!g || g.key !== key) { g = { key: key, label: (it.date.getMonth() + 1) + '월' + (it.date.getFullYear() !== today.getFullYear() ? ' (' + it.date.getFullYear() + ')' : ''), items: [] }; groups.push(g); }
+    g.items.push(it);
+  });
+  /* 해마다 날짜가 바뀌는데 이번 범위의 날짜를 아직 모르는 이벤트 */
+  var unknown = CONFIG.events.filter(function (ev) {
+    if (!ev.dates) return false;
+    return !eventDate(ev, today);
+  }).map(function (ev) { return ev.name + ' (' + ev.typical + ')'; });
+  return { from: today, to: end, items: list, groups: groups, unknown: unknown };
+}
+
+function buildWeeks(roadmap, area, type, posts) {
+  var today = dayOnly(new Date());
+  var monday = addDays(today, -((today.getDay() + 6) % 7));
+  var weeks = [], focusCount = {}, fallbackI = 0;
+  for (var w = 0; w < 4; w++) {
+    var ws = addDays(monday, w * 7), we = addDays(ws, 6);
+    var tasks = [];
+    /* 1) 이번 주에 게시일이 걸린 새소식 — 날짜를 박아서 */
+    var postsDue = roadmap.items.filter(function (it) { return it.postDate >= ws && it.postDate <= we && it.postDate >= today; });
+    postsDue.forEach(function (it) {
+      tasks.push({ k: '새소식', t: '“' + fillArea(it.ev.post, area) + '”',
+        sub: mdw(it.postDate) + ' 게시 · 키워드: ' + it.localKw + ', ' + it.ev.keywords[0] });
+    });
+    if (!postsDue.length) {
+      var p = posts[fallbackI % Math.max(posts.length, 1)]; fallbackI++;
+      if (p) tasks.push({ k: '새소식', t: '“' + p.title + '”', sub: '이번 주 화요일 게시 · 키워드: ' + p.keywords.join(', ') });
+    }
+    /* 2) 준비 기간이 걸친 이벤트 중 집중할 하나: 이번 주가 당일인 것 → 상권 핵심 → 가까운 날짜 */
+    var live = roadmap.items.filter(function (it) { return it.prepStart <= we && it.date >= ws; });
+    live.sort(function (a, b) {
+      var ad = a.date <= we, bd = b.date <= we;
+      if (ad !== bd) return ad ? -1 : 1;
+      if (a.core !== b.core) return a.core ? -1 : 1;
+      return a.date - b.date;
+    });
+    var focus = live[0] || null;
+    if (focus) {
+      var phase = focusCount[focus.ev.id] || 0;
+      focusCount[focus.ev.id] = phase + 1;
+      var onDay = focus.date >= ws && focus.date <= we;
+      if (phase === 0) {
+        tasks.push({ k: '매장 현장', t: focus.ev.store, sub: focus.ev.name + ' 준비 시작' });
+        tasks.push({ k: '스마트플레이스', t: focus.ev.smartplace });
+      } else if (phase === 1) {
+        tasks.push({ k: '단골 연락', t: focus.ev.crm, sub: CONFIG.crmRule });
+        tasks.push({ k: '매장 현장', t: '지난주에 준비한 ' + focus.ev.name + ' 안내물·진열이 그대로 있는지, 직원 모두 같은 설명을 하는지 확인' });
+      } else {
+        tasks.push({ k: '단골 연락', t: '지난 연락에 답한 고객에게 방문 날짜를 정해 다시 연락 (' + focus.ev.name + ')', sub: CONFIG.crmRule });
+      }
+      if (onDay) tasks.push({ k: '당일', t: mdw(focus.date) + ' ' + focus.ev.name + ' — 입구 안내물 확인, 저녁에 짧은 소식 1건, 다음 날 안내물 교체' });
+    } else {
+      tasks.push({ k: '스마트플레이스', t: '사진 탭에 이번 주 매장 실물 사진 2장 추가, 리뷰 답글 정리' });
+      tasks.push({ k: '매장 현장', t: type ? type.tip : '진열과 안내물을 다음 이벤트에 맞게 정리' });
+    }
+    /* 3) 집중 이벤트에 밀려 준비가 늦어질 이벤트: 다음 주 안에 오는데 아직 준비를 안 했으면 진열만이라도 이번 주에 */
+    var nextEnd = addDays(we, 7);
+    live.forEach(function (it) {
+      if (it === focus || focusCount[it.ev.id] || it.date > nextEnd) return;
+      focusCount[it.ev.id] = 1;
+      tasks.push({ k: '매장 현장', t: it.ev.store, sub: it.ev.name + '(' + mdw(it.date) + ') 준비 시작 — 다음 주라 이번 주에 미리' });
+    });
+    tasks.push({ k: '점검', t: '스마트플레이스 통계에서 지난주 새소식 조회수와 길찾기 수를 적어 둔다' });
+    var also = live.filter(function (it) { return it !== focus; }).map(function (it) { return it.ev.name + ' ' + mdw(it.date); });
+    weeks.push({ n: w + 1, start: ws, end: we, focus: focus, tasks: tasks, also: also });
+  }
+  return weeks;
+}
+function weeksText(R) {
+  var L = ['[' + R.place.name + ' 4주 활동 계획] ' + R.checkedAt];
+  R.weeks.forEach(function (w) {
+    L.push('');
+    L.push(w.n + '주차 ' + md(w.start) + '~' + md(w.end) + (w.focus ? ' · 집중: ' + w.focus.ev.name : ''));
+    w.tasks.forEach(function (t) { L.push('- [' + t.k + '] ' + t.t); });
+  });
+  L.push('');
+  L.push('※ ' + CONFIG.crmRule);
+  return L.join('\n');
+}
+
+/* 3개월 안 이벤트의 대표 키워드 (키워드도구 한 번에 5개) */
+function upcomingEventHints() {
+  var today = dayOnly(new Date()), end = addDays(today, CONFIG.ROADMAP_DAYS);
+  return CONFIG.events.map(function (ev) { var r = eventDate(ev, today); return r && r.date <= end ? { d: r.date, k: ev.keywords[0] } : null; })
+    .filter(function (x) { return x; }).sort(function (a, b) { return a.d - b.d; })
+    .map(function (x) { return x.k.replace(/\s+/g, ''); }).slice(0, 5);
+}
+function demoEventVolumes() {
+  var fake = [2400, 9800, 31000, 18500, 7200, 4100, 12600, 3300, 15800, 26000, 5400];
+  var list = [];
+  CONFIG.events.forEach(function (ev, i) { ev.keywords.forEach(function (k, j) { list.push({ kw: k, total: Math.round(fake[(i + j) % fake.length] / (j + 1)), under10: false }); }); });
+  return { ok: true, source: '예시 데이터', list: list };
+}
+
+function buildPosts(ctx) {
+  var area = ctx.area, kw = ctx.kw, tr = ctx.trend, type = ctx.type;
+  var month = new Date().getMonth() + 1;
+  var next = month === 12 ? 1 : month + 1;
+  var mainKw = kw && kw.reps.length ? kw.reps[0].kw : (area.label + '휴대폰');
+  var subKw = kw && kw.reps.length > 1 ? kw.reps[1].kw : '';
+  var posts = [];
+
+  if (tr) {
+    var ranked = tr.series.slice().sort(function (a, b) {
+      if ((a.status === 'up') !== (b.status === 'up')) return a.status === 'up' ? -1 : 1;
+      return b.change - a.change;
+    });
+    var g = ranked[0];
+    posts.push({
+      tag: '트렌드 연동',
+      title: fillArea(CONFIG.postTemplates[g.name] || '{area} ' + g.name + ' 상담 안내', area),
+      keywords: [mainKw, g.name].concat(subKw ? [subKw] : []),
+      when: g.status === 'up' ? '이번 주 안에' : '이번 달 둘째 주',
+      reason: g.name + ' 검색이 직전 3개월 평균보다 ' + (g.change >= 0 ? '+' : '') + Math.round(g.change * 100) + '% (' + (g.status === 'up' ? '상승 중' : '상승 신호는 약함') + ')'
+    });
+  }
+
+  var s = CONFIG.seasons[month];
+  var sNext = CONFIG.seasons[next];
+  posts.push({
+    tag: '시즌 · ' + month + '월 ' + s.theme,
+    title: fillArea(s.post, area),
+    keywords: [mainKw].concat(s.group ? [s.group] : []),
+    when: '이번 달 셋째 주',
+    reason: '달력 규칙: ' + month + '월은 통상 ' + s.theme + ' 시기. 다음 달(' + next + '월 ' + sNext.theme + ') 글은 이달 마지막 주에 미리 준비'
+  });
+
+  if (type) {
+    posts.push({
+      tag: '상권 맞춤 · ' + type.name,
+      title: fillArea(type.post, area),
+      keywords: [subKw || mainKw].concat(type.focus ? [type.focus] : []),
+      when: '이번 달 넷째 주',
+      reason: '상권 판정 근거: ' + type.evidence
+    });
+  }
+  return posts;
+}
+
+/* ------------------------------------------------------------------
+   예시 응답 만들기 (서버 미연결일 때)
+------------------------------------------------------------------ */
+function demoTrend(ageSetId) {
+  var r = trendRange(CONFIG.trendMonths);
+  var labels = monthLabels(CONFIG.trendMonths);
+  var tilt = { all: {}, '2030': { '아이폰': 1.2, '효도폰': 0.4 }, '3040': { '키즈폰': 1.6 }, '5060': { '효도폰': 2.4, '아이폰': 0.6 } }[ageSetId] || {};
+  return { ok: true, source: '예시 데이터', startDate: r.startDate, endDate: r.endDate,
+    results: CONFIG.trendGroups.map(function (g) {
+      var shape = DEMO.trendShape[g.name] || [];
+      var k = tilt[g.name] || 1;
+      return { name: g.name, data: labels.map(function (p, i) { return { p: p, v: Math.min(100, Math.round((shape[i] || 10) * k)) }; }) };
+    }) };
+}
+
+/* ------------------------------------------------------------------
+   작은 화면 부품
+------------------------------------------------------------------ */
+function SourceLine(props) {
+  var extra = props.extra && props.extra.indexOf(props.name) !== 0 ? props.extra : (props.extra ? props.extra.replace(props.name, '').replace(/^\s*·\s*/, '') : '');
+  return e('div', { className: 'source' }, '출처 ' + props.name + (extra ? ' · ' + extra : '') + ' · ' + props.checkedAt + ' 조회');
+}
+function ErrorBox(props) {
+  return e('div', { className: 'err' }, e('b', null, props.title + ' — 이 칸만 비었습니다'), e('div', null, props.msg));
+}
+function fmt(n) { return String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, ','); }
+
+var COLORS = ['#0f5f5c', '#d9822b', '#5b6bd6', '#c2477a', '#7a8a2e'];
+
+function LineChart(props) {
+  var w = 340, h = 170, padL = 28, padB = 22, padT = 10, padR = 8;
+  var labels = props.labels, series = props.series;
+  var max = 1;
+  series.forEach(function (s) { s.vals.forEach(function (v) { if (v > max) max = v; }); });
+  function x(i) { return padL + (w - padL - padR) * (labels.length === 1 ? 0 : i / (labels.length - 1)); }
+  function y(v) { return padT + (h - padT - padB) * (1 - v / max); }
+  var grid = [0, 0.5, 1].map(function (t, i) {
+    var yy = y(max * t);
+    return e(React.Fragment, { key: 'g' + i },
+      e('line', { x1: padL, x2: w - padR, y1: yy, y2: yy, stroke: '#e7e5df', strokeWidth: 1 }),
+      e('text', { x: padL - 6, y: yy + 4, fontSize: 10, textAnchor: 'end', fill: '#94938d' }, Math.round(max * t)));
+  });
+  var ticks = labels.map(function (p, i) {
+    if (i % 2 !== 1 && i !== labels.length - 1) return null;
+    return e('text', { key: 't' + i, x: x(i), y: h - 6, fontSize: 10, textAnchor: 'middle', fill: '#94938d' }, Number(p.slice(5, 7)) + '월');
+  });
+  var lines = series.map(function (s, si) {
+    var d = s.vals.map(function (v, i) { return (i ? 'L' : 'M') + x(i).toFixed(1) + ' ' + y(v).toFixed(1); }).join(' ');
+    return e(React.Fragment, { key: 's' + si },
+      e('path', { d: d, fill: 'none', stroke: COLORS[si % COLORS.length], strokeWidth: si === props.hi ? 3 : 1.8, strokeLinejoin: 'round', opacity: props.hi == null || si === props.hi ? 1 : 0.35 }),
+      e('circle', { cx: x(s.vals.length - 1), cy: y(s.vals[s.vals.length - 1]), r: 3, fill: COLORS[si % COLORS.length] }));
+  });
+  return e('svg', { viewBox: '0 0 ' + w + ' ' + h, width: '100%', role: 'img', 'aria-label': '주제어별 월간 검색 추이' }, grid, ticks, lines);
+}
+
+/* ------------------------------------------------------------------
+   설정 시트
+------------------------------------------------------------------ */
+function SettingsSheet(props) {
+  var st = useState(props.settings.workerUrl || ''); var url = st[0], setUrl = st[1];
+  var sc = useState(props.settings.code || ''); var code = sc[0], setCode = sc[1];
+  var sh = useState(null); var health = sh[0], setHealth = sh[1];
+  function test() {
+    setHealth({ loading: true });
+    apiCall({ workerUrl: url, code: code }, '/health').then(function (r) { setHealth(r); });
+  }
+  var f = health && health.features;
+  return e('div', { className: 'backdrop', onClick: props.onClose },
+    e('div', { className: 'sheet', onClick: function (ev) { ev.stopPropagation(); } },
+      e('h3', null, '서버 연결'),
+      e('div', { className: 'muted', style: { fontSize: 14, lineHeight: 1.6 } },
+        'API 키는 이 앱에 넣지 않습니다. 키는 중계 서버(Cloudflare Worker)에만 두고, 여기에는 그 서버 주소만 적습니다.'),
+      e('label', null, '서버 주소'),
+      e('input', { value: url, placeholder: 'https://store-lens.ideasoy79.workers.dev', onChange: function (ev) { setUrl(ev.target.value.trim()); }, inputMode: 'url', autoCapitalize: 'off' }),
+      e('label', null, '접속 코드 (서버에 설정한 경우만)'),
+      e('input', { value: code, placeholder: '없으면 비워 두세요', onChange: function (ev) { setCode(ev.target.value.trim()); }, autoCapitalize: 'off' }),
+      e('div', { className: 'row', style: { marginTop: 14 } },
+        e('button', { className: 'btn ghost small', onClick: test, disabled: !url }, '연결 확인'),
+        health && health.loading ? e('span', { className: 'muted', style: { fontSize: 14 } }, '확인 중…') : null),
+      health && !health.loading ? (health.ok ? e('div', { className: 'card white', style: { marginTop: 12, fontSize: 14, lineHeight: 1.9 } },
+        e('div', null, (f.place ? '● ' : '○ ') + '매장 위치 (네이버 지역검색)'),
+        e('div', null, (f.nearby ? '● ' : '○ ') + '상권 (소상공인 상가정보)'),
+        e('div', null, (f.keywords ? '● ' : '○ ') + '지역 키워드 (검색광고 키워드도구)'),
+        e('div', null, (f.trend ? '● ' : '○ ') + '트렌드 (데이터랩)'),
+        e('div', { className: 'muted', style: { fontSize: 12 } }, '○ 표시는 서버에 그 키가 아직 없다는 뜻입니다. 그 칸만 비고 나머지는 동작합니다.'))
+        : e('div', { className: 'err', style: { marginTop: 12 } }, health.error || '연결 실패')) : null,
+      e('div', { style: { height: 18 } }),
+      e('button', { className: 'btn block', onClick: function () { props.onSave({ workerUrl: url, code: code }); } }, '저장'),
+      e('button', { className: 'linkbtn', style: { width: '100%' }, onClick: function () { props.onSave({ workerUrl: '', code: '' }); } }, '연결 해제하고 예시 모드로')
+    ));
+}
+
+/* ------------------------------------------------------------------
+   첫 화면 — 입력 1개
+------------------------------------------------------------------ */
+function Home(props) {
+  var s = useState(''); var q = s[0], setQ = s[1];
+  var connected = !!props.settings.workerUrl;
+  function go() { if (q.trim()) props.onSearch(q.trim()); }
+  return e('div', null,
+    e('div', { className: 'hero' },
+      e('div', { className: 'eyebrow' }, 'STORE LENS'),
+      e('h2', null, '매장명만 넣으면', e('br'), '이번 달 올릴 글이 나옵니다'),
+      e('p', null, '위치와 상권을 읽고, 동네 사람들이 실제로 검색하는 말과 요즘 뜨는 주제를 찾아 스마트플레이스 새소식 주제 3개로 정리합니다.'),
+      connected ? e('div', { className: 'searchbox' },
+        e('input', { value: q, placeholder: '예: SKT 다사점', onChange: function (ev) { setQ(ev.target.value); },
+          onKeyDown: function (ev) { if (ev.key === 'Enter') go(); }, enterKeyHint: 'search' }),
+        e('button', { className: 'btn', onClick: go, disabled: !q.trim() }, '분석'))
+        : e('div', { style: { margin: '22px 0 10px' } },
+          e('button', { className: 'btn block', onClick: props.onDemo }, '예시 매장으로 결과 먼저 보기'),
+          e('div', { className: 'muted', style: { fontSize: 13, lineHeight: 1.6, marginTop: 10 } },
+            '실제 매장 조회는 서버 연결 후에 열립니다. ',
+            e('button', { className: 'linkbtn', style: { padding: 0, minHeight: 0 }, onClick: props.onSettings }, '서버 연결하기'))),
+      connected ? e('div', { className: 'between' },
+        e('button', { className: 'linkbtn', onClick: props.onDemo }, '예시 결과 보기'),
+        e('button', { className: 'linkbtn', onClick: props.onSettings }, '서버 설정')) : null,
+      props.settings.recent && props.settings.recent.length && connected ? e('div', { style: { marginTop: 18 } },
+        e('div', { className: 'muted', style: { fontSize: 13, marginBottom: 8 } }, '최근 조회'),
+        e('div', { className: 'chips' }, props.settings.recent.map(function (r, i) {
+          return e('button', { key: i, className: 'chip', onClick: function () { props.onSearch(r); } }, r);
+        }))) : null
+    ),
+    e('div', { className: 'page' },
+      e('div', { className: 'card', style: { fontSize: 14, lineHeight: 1.8 } },
+        e('b', null, '결과 화면에 나오는 것'),
+        e('div', null, '① 상권 유형과 반경 500m 경쟁 통신매장 수'),
+        e('div', null, '② 스마트플레이스 대표키워드 5개 (실제 월간 검색량 기준)'),
+        e('div', null, '③ 최근 12개월 검색 트렌드와 상승 주제'),
+        e('div', null, '④ 이번 달 새소식 주제 3개와 넣을 키워드'),
+        e('div', null, '⑤ 3개월 이벤트 로드맵 (준비 시작일·키워드)'),
+        e('div', null, '⑥ 앞으로 4주 주차별 활동 가이드')),
+      e(Footer, null))
+  );
+}
+
+function Footer() {
+  var t = CONFIG.trust;
+  return e('div', { className: 'footer' },
+    e('div', null, CONFIG.appName + ' v' + CONFIG.version + ' · ' + CONFIG.updatedAt + ' 갱신'),
+    e('div', null, '판정은 모두 앱의 규칙이며 AI가 만든 문장이 아닙니다'),
+    e('div', null, e('a', { href: t.contactUrl }, '문의하기'), ' · ' + t.replyTime + ' · ', e('a', { href: t.privacyUrl }, '개인정보 처리방침')));
+}
+
+/* ------------------------------------------------------------------
+   매장 고르기 (검색 결과가 여러 개일 때)
+------------------------------------------------------------------ */
+function Pick(props) {
+  return e('div', { className: 'page' },
+    e('p', { className: 'muted', style: { fontSize: 14 } }, '"' + props.query + '" 검색 결과입니다. 분석할 매장을 고르세요.'),
+    props.items.map(function (p, i) {
+      return e('button', { key: i, className: 'card white', style: { display: 'block', width: '100%', textAlign: 'left', cursor: 'pointer', fontFamily: 'inherit', fontSize: 15 },
+        onClick: function () { props.onPick(p); } },
+        e('b', null, p.name), e('div', { className: 'muted', style: { fontSize: 13, marginTop: 4 } }, p.category),
+        e('div', { className: 'muted', style: { fontSize: 13 } }, p.roadAddress || p.address));
+    }),
+    e(SourceLine, { name: '네이버 지역검색', checkedAt: todayStr() }));
+}
+
+/* ------------------------------------------------------------------
+   불러오는 중 — 단계별로 보여준다
+------------------------------------------------------------------ */
+function Loading(props) {
+  var st = props.status || {};
+  function line(key, label) {
+    var v = st[key];
+    var mark = v === 'done' ? '● ' : (v === 'fail' ? '× ' : '○ ');
+    return e('div', { key: key, style: { color: v === 'done' ? 'var(--text)' : 'var(--muted)' } }, mark + label + (v === 'fail' ? ' — 건너뜀' : ''));
+  }
+  return e('div', { className: 'page' },
+    e('h3', { style: { margin: '10px 0 4px' } }, props.name || '매장'),
+    e('p', { className: 'muted', style: { fontSize: 14, marginTop: 0 } }, CONFIG.copy.loading),
+    e('div', { className: 'steps card white' },
+      line('place', '매장 위치 확인'), line('nearby', '반경 ' + CONFIG.radius + 'm 상권 읽기'),
+      line('keywords', '지역 키워드 검색량 조회'), line('trend', '최근 12개월 트렌드 조회')));
+}
+
+/* ------------------------------------------------------------------
+   결과 리포트
+------------------------------------------------------------------ */
+function Report(props) {
+  var R = props.report;
+  var area = R.area, kw = R.kw, type = R.type, nb = R.nearby, tr = R.trend;
+  var hs = useState(null); var hi = hs[0], setHi = hs[1];
+  var checked = R.checkedAt;
+  var refs = { area: useRef(null), kw: useRef(null), trend: useRef(null), posts: useRef(null), road: useRef(null), weeks: useRef(null), guide: useRef(null) };
+  function jump(k) { if (refs[k].current) window.scrollTo({ top: refs[k].current.getBoundingClientRect().top + window.scrollY - 110, behavior: 'smooth' }); }
+  var srcExtra = R.demo ? '예시 데이터' : null;
+
+  return e('div', null,
+    e('div', { className: 'tabs' },
+      e('button', { onClick: function () { jump('area'); } }, '상권'),
+      e('button', { onClick: function () { jump('kw'); } }, '키워드'),
+      e('button', { onClick: function () { jump('trend'); } }, '트렌드'),
+      e('button', { onClick: function () { jump('posts'); } }, '이번 달 글'),
+      e('button', { onClick: function () { jump('road'); } }, '3개월'),
+      e('button', { onClick: function () { jump('weeks'); } }, '4주 계획'),
+      e('button', { onClick: function () { jump('guide'); } }, '점검표')),
+    e('div', { className: 'page' },
+      R.demo ? e('div', { className: 'notice' }, CONFIG.copy.demoBanner) : null,
+
+      /* 요약 */
+      e('div', { className: 'card white' },
+        e('div', { style: { fontSize: 13, color: 'var(--muted)' } }, R.place.category),
+        e('div', { style: { fontSize: 20, fontWeight: 800, letterSpacing: '-.02em', margin: '2px 0 4px' } }, R.place.name),
+        e('div', { className: 'muted', style: { fontSize: 14 } }, R.place.roadAddress || R.place.address),
+        e('div', { className: 'chips', style: { marginTop: 12 } },
+          type ? e('span', { className: 'chip key' }, type.name) : null,
+          nb && nb.ok ? e('span', { className: 'chip' }, '통신매장 ' + nb.telecom.length + '곳 / ' + CONFIG.radius + 'm') : null,
+          kw ? e('span', { className: 'chip' }, '동네 키워드 월 ' + fmt(kw.localSum) + '회') : null),
+        R.demo ? null : e('a', { className: 'btn ghost small', style: { marginTop: 12 }, target: '_blank', rel: 'noopener',
+          href: 'https://map.naver.com/p/search/' + encodeURIComponent(R.place.name) }, '네이버 지도에서 보기')),
+
+      /* 1. 상권 */
+      e('div', { className: 'sec', ref: refs.area },
+        e('h3', null, '① 상권'),
+        e('p', { className: 'lead' }, '반경 ' + CONFIG.radius + 'm 안의 가게 구성으로 어떤 손님이 지나가는 동네인지 판정합니다.'),
+        !nb || !nb.ok ? e(ErrorBox, { title: '상권', msg: (nb && nb.error) || '조회하지 못했습니다' }) :
+          e('div', null,
+            e('div', { className: 'card white' },
+              e('div', { className: 'between' },
+                e('div', null, e('div', { className: 'muted', style: { fontSize: 13 } }, '상권 유형'),
+                  e('div', { style: { fontSize: 20, fontWeight: 800 } }, type.name)),
+                e('div', { style: { textAlign: 'right' } }, e('div', { className: 'muted', style: { fontSize: 13 } }, '업소 수'),
+                  e('div', { className: 'big num' }, fmt(nb.total)))),
+              e('div', { className: 'reason' }, '판정 근거: ' + type.evidence),
+              e('div', { className: 'reason', style: { color: 'var(--text)' } }, type.tip),
+              e('div', { style: { marginTop: 14 } }, nb.byLarge.slice(0, 7).map(function (x, i) {
+                var pct = x.n / nb.counted;
+                return e('div', { key: i, className: 'bar' },
+                  e('span', { className: 'lab' }, x.name),
+                  e('span', { className: 'track' }, e('span', { className: 'fill', style: { width: Math.round(pct * 100) + '%', display: 'block' } })),
+                  e('span', { className: 'val num' }, Math.round(pct * 100) + '%'));
+              })),
+              e(SourceLine, { name: nb.source, extra: srcExtra || ('기준 ' + nb.baseYm + ' · 분기 갱신'), checkedAt: checked })),
+            e('div', { className: 'card white' },
+              e('div', { className: 'between' }, e('b', null, '가까운 통신 매장'), e('span', { className: 'muted num', style: { fontSize: 14 } }, nb.telecom.length + '곳')),
+              nb.telecom.length ? nb.telecom.slice(0, 5).map(function (t, i) {
+                return e('div', { key: i, className: 'between', style: { padding: '8px 0', borderBottom: '1px solid #eeece6', fontSize: 14 } },
+                  e('span', null, t.name), e('span', { className: 'muted num' }, t.dist + 'm'));
+              }) : e('div', { className: 'reason' }, '반경 안에 통신 매장으로 분류된 곳이 없습니다.'),
+              e('div', { className: 'reason' }, '자기 매장도 목록에 섞여 있을 수 있습니다. 상가정보는 분기마다 갱신되어 최근 개·폐업이 빠질 수 있습니다.'),
+              e(SourceLine, { name: nb.source, extra: srcExtra, checkedAt: checked })))),
+
+      /* 2. 키워드 */
+      e('div', { className: 'sec', ref: refs.kw },
+        e('h3', null, '② 지역 키워드'),
+        e('p', { className: 'lead' }, '동네 이름 + 업종으로 실제 검색되는 말입니다. 대표키워드와 새소식 제목에 씁니다.'),
+        !kw ? e(ErrorBox, { title: '키워드', msg: (R.kwRaw && R.kwRaw.error) || '조회하지 못했습니다' }) :
+          e('div', null,
+            kw.state === 'ranked' ? e('div', { className: 'card white' },
+              e('b', null, '스마트플레이스 대표키워드 추천'),
+              e('div', { className: 'reason' }, '동네 키워드 중 월간 검색량이 높은 순서로 ' + kw.reps.length + '개입니다.'),
+              e('div', { className: 'chips', style: { marginTop: 10 } }, kw.reps.map(function (k, i) { return e('span', { key: i, className: 'chip key' }, (i + 1) + '. ' + k.kw); })),
+              kw.skipped.length ? e('div', { className: 'reason', style: { marginTop: 10 } },
+                '뺀 키워드: ', kw.skipped.map(function (k) { return k.kw; }).join(', '),
+                ' — 검색은 되지만 "' + kw.skipped[0].risky + '" 같은 표현은 통신 광고에서 문제가 될 수 있어 대표키워드에서 뺐습니다.') : null,
+              e('button', { className: 'btn ghost small', style: { marginTop: 12 }, onClick: function () { props.onCopy(kw.reps.map(function (k) { return k.kw; }).join(', '), '대표키워드를 복사했습니다'); } }, '키워드 복사'))
+              : e('div', { className: 'notice' }, '동네 키워드가 ' + kw.local.length + '개뿐이라 대표키워드 추천을 아직 열지 않았습니다. 기준은 ' + CONFIG.MIN_LOCAL_KW + '개입니다. 아래 넓은 지역 키워드를 참고하세요.'),
+            e('div', { className: 'card white' },
+              e('table', { className: 'kw' },
+                e('thead', null, e('tr', null, e('th', null, '동네 키워드'), e('th', null, '월 검색'), e('th', null, '모바일'), e('th', null, '광고경쟁'))),
+                e('tbody', null, kw.local.slice(0, 12).map(function (k, i) {
+                  return e('tr', { key: i },
+                    e('td', null, k.kw, k.risky ? e('span', { className: 'chip bad', style: { marginLeft: 6, padding: '2px 7px', fontSize: 11 } }, '주의') : null),
+                    e('td', { className: 'num' }, (k.under10 ? '약 ' : '') + fmt(k.total)),
+                    e('td', { className: 'num muted' }, Math.round(k.mobile / Math.max(k.total, 1) * 100) + '%'),
+                    e('td', { className: 'muted' }, k.comp));
+                }))),
+              kw.local.length === 0 ? e('div', { className: 'reason' }, '동네 이름이 들어간 키워드를 찾지 못했습니다.') : null,
+              e('div', { className: 'reason' }, '모바일 비율이 높을수록 스마트플레이스(지도) 노출이 중요한 키워드입니다. "약"은 PC나 모바일 한쪽이 10회 미만으로 나와 5회로 계산한 값입니다.'),
+              e(SourceLine, { name: (R.kwRaw && R.kwRaw.source) || '', extra: srcExtra || '최근 30일 월간 검색수', checkedAt: checked })),
+            kw.broad.length ? e('details', { className: 'card' },
+              e('summary', { style: { fontWeight: 700, cursor: 'pointer' } }, '넓은 지역·일반 키워드 ' + kw.broad.length + '개'),
+              e('div', { className: 'reason' }, '검색은 많지만 경쟁이 세서 작은 매장 글이 잘 보이지 않는 키워드입니다. 제목보다 본문에 섞어 쓰세요.'),
+              kw.broad.map(function (k, i) {
+                return e('div', { key: i, className: 'between', style: { padding: '7px 0', fontSize: 14, borderBottom: '1px solid #eeece6' } },
+                  e('span', null, k.kw, k.risky ? ' ⚠' : ''), e('span', { className: 'num muted' }, fmt(k.total)));
+              })) : null)),
+
+      /* 3. 트렌드 */
+      e('div', { className: 'sec', ref: refs.trend },
+        e('h3', null, '③ 트렌드'),
+        e('p', { className: 'lead' }, '네이버 전체 검색에서 주제별 관심이 어떻게 움직이는지 봅니다. 숫자는 가장 높은 달을 100으로 둔 상대값입니다.'),
+        e('div', { className: 'chips', style: { marginBottom: 10 } }, CONFIG.ageSets.map(function (a) {
+          return e('button', { key: a.id, className: 'chip' + (R.ageSet === a.id ? ' on' : ''), onClick: function () { props.onAge(a.id); } }, a.label);
+        })),
+        !tr ? e(ErrorBox, { title: '트렌드', msg: (R.trRaw && R.trRaw.error) || '조회하지 못했습니다' }) :
+          e('div', { className: 'card white' },
+            e(LineChart, { labels: tr.labels, series: tr.series, hi: hi }),
+            e('div', { className: 'legend' }, tr.series.map(function (s, i) {
+              return e('button', { key: i, className: 'chip', style: { border: hi === i ? '1.5px solid ' + COLORS[i] : undefined },
+                onClick: function () { setHi(hi === i ? null : i); } },
+                e('span', { className: 'dot', style: { background: COLORS[i] } }), s.name + ' ',
+                e('b', { style: { color: s.status === 'up' ? 'var(--up)' : (s.status === 'down' ? 'var(--down)' : 'var(--muted)') } },
+                  (s.change >= 0 ? '+' : '') + Math.round(s.change * 100) + '%'));
+            })),
+            e('div', { className: 'reason' }, '% 는 지난달 값을 그 전 3개월 평균과 비교한 것입니다. 정점: ' +
+              tr.series.map(function (s) { return s.name + ' ' + s.peak; }).join(' · ')),
+            e(SourceLine, { name: (R.trRaw && R.trRaw.source) || '', extra: (srcExtra ? srcExtra + ' · ' : '') + tr.range + ' · ' + (CONFIG.ageSets.filter(function (a) { return a.id === R.ageSet; })[0] || {}).label, checkedAt: checked }))),
+
+      /* 4. 이번 달 글 */
+      e('div', { className: 'sec', ref: refs.posts },
+        e('h3', null, '④ 이번 달 새소식 주제'),
+        e('p', { className: 'lead' }, '위 세 가지 근거를 묶은 주제입니다. 한 주에 하나씩 올리면 한 달이 찹니다.'),
+        R.posts.map(function (p, i) {
+          return e('div', { key: i, className: 'post' },
+            e('div', { className: 'tag' }, p.tag),
+            e('h4', null, p.title),
+            e('div', { className: 'chips' }, p.keywords.map(function (k, j) { return e('span', { key: j, className: 'chip key' }, k); }),
+              e('span', { className: 'chip' }, '올릴 때: ' + p.when)),
+            e('div', { className: 'reason' }, '왜: ' + p.reason),
+            e('button', { className: 'linkbtn', onClick: function () { props.onCopy(postText(R, p), '글쓰기 메모를 복사했습니다'); } }, '이 주제로 글쓰기 메모 복사'));
+        }),
+        e('div', { className: 'reason' }, '복사한 메모를 블로그 작성 도구나 Claude에 붙여 넣으면 본문 초안을 바로 만들 수 있습니다. 가격·지원금은 매장에서 확인한 값만 넣으세요.')),
+
+      /* 5. 3개월 로드맵 */
+      e('div', { className: 'sec', ref: refs.road },
+        e('h3', null, '⑤ 3개월 로드맵'),
+        e('p', { className: 'lead' }, md(R.roadmap.from) + ' ~ ' + md(R.roadmap.to) + ' 사이 이벤트와 준비 시작일입니다. ' + (R.type ? '“' + R.type.name + '”에 특히 맞는 이벤트에 핵심 표시를 했습니다.' : '')),
+        R.roadmap.groups.map(function (g, gi) {
+          return e('div', { key: gi, style: { marginBottom: 16 } },
+            e('div', { className: 'monthhead' }, g.label),
+            g.items.map(function (it, ii) {
+              return e('div', { key: ii, className: 'evt' + (it.core ? ' core' : '') },
+                e('div', { className: 'between' },
+                  e('b', { style: { fontSize: 16 } }, it.ev.name),
+                  e('span', { className: 'num', style: { fontSize: 13, fontWeight: 700, color: it.dday <= 14 ? 'var(--down)' : 'var(--muted)' } }, it.dday === 0 ? '오늘' : 'D-' + it.dday)),
+                e('div', { className: 'muted', style: { fontSize: 13, marginTop: 2 } },
+                  (it.approx ? '통상 ' + it.ev.typical : mdw(it.date)) + ' · 준비 시작 ' + (it.prepNow ? '지금' : mdw(it.prepStart))),
+                e('div', { className: 'chips', style: { marginTop: 8 } },
+                  it.core ? e('span', { className: 'chip on' }, '우리 상권 핵심') : null,
+                  e('span', { className: 'chip key' }, it.localKw),
+                  it.keywords.map(function (k, j) {
+                    return e('span', { key: j, className: 'chip' }, k.kw + (k.v ? ' · 월 ' + fmt(k.v.total) : ''));
+                  })),
+                e('div', { className: 'reason' }, '새소식 ' + mdw(it.postDate) + ' 게시 안: ' + fillArea(it.ev.post, R.area)));
+            }));
+        }),
+        R.roadmap.unknown.length ? e('div', { className: 'notice' }, '날짜를 아직 넣지 않은 이벤트: ' + R.roadmap.unknown.join(', ') + '. 확정 날짜를 확인해 CONFIG에 넣으면 로드맵에 나타납니다.') : null,
+        e('div', { className: 'reason' }, '“통상”이 붙은 날짜는 해마다·학교마다·제조사마다 달라지는 관행 기준입니다. 확정 발표를 보고 게시일을 맞추세요. 수능은 2026년 11월 19일(목) 확정 일정입니다.'),
+        e(SourceLine, { name: (R.evRaw && R.evRaw.ok ? R.evRaw.source : '앱 이벤트 달력') , extra: (R.demo ? '예시 데이터 · ' : '') + '이벤트 키워드 월간 검색수', checkedAt: checked })),
+
+      /* 6. 4주 활동 가이드 */
+      e('div', { className: 'sec', ref: refs.weeks },
+        e('h3', null, '⑥ 앞으로 4주 활동 가이드'),
+        e('p', { className: 'lead' }, '주마다 집중할 이벤트 하나와 할 일 4~5개입니다. 준비 기간이 겹치면 우리 상권 핵심 이벤트와 가까운 날짜를 먼저 둡니다.'),
+        R.weeks.map(function (w, wi) {
+          return e('div', { key: wi, className: 'week' },
+            e('div', { className: 'between' },
+              e('b', null, w.n + '주차 · ' + md(w.start) + '~' + md(w.end)),
+              w.focus ? e('span', { className: 'chip key' }, w.focus.ev.name) : e('span', { className: 'chip' }, '기본 주간')),
+            w.tasks.map(function (t, ti) {
+              return e('div', { key: ti, className: 'task' },
+                e('span', { className: 'tk' }, t.k),
+                e('div', null, e('div', null, t.t), t.sub ? e('div', { className: 'muted', style: { fontSize: 12, marginTop: 3 } }, t.sub) : null));
+            }),
+            w.also.length ? e('div', { className: 'muted', style: { fontSize: 12, marginTop: 8 } }, '함께 준비: ' + w.also.join(' · ')) : null);
+        }),
+        e('button', { className: 'btn ghost block', style: { marginTop: 4 }, onClick: function () { props.onCopy(weeksText(R), '4주 계획을 복사했습니다'); } }, '4주 계획 복사')),
+
+      /* 7. 점검표 */
+      e('div', { className: 'sec', ref: refs.guide },
+        e('h3', null, '⑦ 스마트플레이스 점검표'),
+        e('p', { className: 'lead' }, '앱이 권하는 운영 습관입니다. 네이버 공식 노출 기준이 아닙니다.'),
+        e('div', { className: 'card white' }, CONFIG.guides.map(function (g, i) {
+          return e('div', { key: i, className: 'check' }, e('b', null, (i + 1) + ''), e('span', null, g));
+        }))),
+
+      e('div', { style: { height: 20 } }),
+      e('button', { className: 'btn block', onClick: function () { props.onCopy(reportText(R), '리포트 전체를 복사했습니다'); } }, '리포트 전체 복사'),
+      e('div', { style: { height: 10 } }),
+      e('button', { className: 'btn ghost block', onClick: props.onBack }, '다른 매장 보기'),
+      e(Footer, null)));
+}
+
+function postText(R, p) {
+  return [
+    '[스마트플레이스 새소식 글쓰기 메모]',
+    '매장: ' + R.place.name + ' (' + (R.place.roadAddress || R.place.address) + ')',
+    '상권: ' + (R.type ? R.type.name + ' — ' + R.type.tip : '미확인'),
+    '제목 안: ' + p.title,
+    '꼭 넣을 키워드: ' + p.keywords.join(', '),
+    '이 주제를 고른 이유: ' + p.reason,
+    '주의: 공짜·0원·성지 같은 표현 금지, 가격·혜택은 조건과 기간을 함께, 확인 안 된 혜택은 쓰지 않기'
+  ].join('\n');
+}
+function reportText(R) {
+  var L = [];
+  L.push('[매장렌즈 리포트] ' + R.place.name + ' · ' + R.checkedAt + (R.demo ? ' (예시 데이터)' : ''));
+  L.push('주소: ' + (R.place.roadAddress || R.place.address));
+  if (R.type) L.push('상권: ' + R.type.name + ' (' + R.type.evidence + ')');
+  if (R.nearby && R.nearby.ok) L.push('반경 ' + CONFIG.radius + 'm 통신매장: ' + R.nearby.telecom.length + '곳');
+  if (R.kw) {
+    L.push('대표키워드 추천: ' + R.kw.reps.map(function (k) { return k.kw + '(' + fmt(k.total) + ')'; }).join(', '));
+  }
+  if (R.trend) L.push('트렌드(지난달 vs 직전 3개월): ' + R.trend.series.map(function (s) { return s.name + ' ' + (s.change >= 0 ? '+' : '') + Math.round(s.change * 100) + '%'; }).join(', '));
+  L.push('이번 달 새소식:');
+  R.posts.forEach(function (p, i) { L.push((i + 1) + '. ' + p.title + ' / 키워드: ' + p.keywords.join(', ') + ' / ' + p.when); });
+  if (R.roadmap) { L.push('3개월 이벤트:'); R.roadmap.items.forEach(function (it) { L.push('- ' + it.ev.name + ' ' + (it.approx ? '(통상 ' + it.ev.typical + ')' : mdw(it.date)) + ' / 준비 시작 ' + (it.prepNow ? '지금' : mdw(it.prepStart)) + (it.core ? ' / 상권 핵심' : '')); }); }
+  L.push('출처: 네이버 지역검색·검색광고 키워드도구·데이터랩, 소상공인시장진흥공단 상가(상권)정보');
+  return L.join('\n');
+}
+
+/* ------------------------------------------------------------------
+   앱
+------------------------------------------------------------------ */
+function copyText(text) {
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    return navigator.clipboard.writeText(text).catch(function () { return fallbackCopy(text); });
+  }
+  return Promise.resolve(fallbackCopy(text));
+}
+function fallbackCopy(text) {
+  var ta = document.createElement('textarea');
+  ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+  document.body.appendChild(ta); ta.select();
+  try { document.execCommand('copy'); } catch (err) {}
+  document.body.removeChild(ta);
+}
+
+function App() {
+  var ss = useState(loadSettings()); var settings = ss[0], setSettings = ss[1];
+  var sc = useState('home'); var screen = sc[0], setScreen = sc[1];
+  var so = useState(false); var showSettings = so[0], setShowSettings = so[1];
+  var sq = useState(''); var query = sq[0], setQuery = sq[1];
+  var sp = useState([]); var picks = sp[0], setPicks = sp[1];
+  var sst = useState({}); var status = sst[0], setStatus = sst[1];
+  var sr = useState(null); var report = sr[0], setReport = sr[1];
+  var se = useState(''); var error = se[0], setError = se[1];
+  var stt = useState(''); var toast = stt[0], setToast = stt[1];
+  var sl = useState(''); var loadingName = sl[0], setLoadingName = sl[1];
+
+  useEffect(function () {
+    var titles = { home: CONFIG.appName, pick: '매장 고르기 · ' + CONFIG.appName, loading: '분석 중 · ' + CONFIG.appName,
+      report: (report ? report.place.name + ' · ' : '') + CONFIG.appName };
+    document.title = titles[screen] || CONFIG.appName;
+    window.scrollTo(0, 0);
+  }, [screen]);
+
+  useEffect(function () {
+    function onPop() { if (screen !== 'home') { setScreen('home'); } }
+    window.addEventListener('popstate', onPop);
+    return function () { window.removeEventListener('popstate', onPop); };
+  }, [screen]);
+
+  function go(next) {
+    if (next !== 'home') { try { window.history.pushState({ s: next }, ''); } catch (err) {} }
+    setScreen(next);
+  }
+  function flash(msg) { setToast(msg); setTimeout(function () { setToast(''); }, 1800); }
+  function onCopy(text, msg) { copyText(text).then(function () { flash(msg); }); }
+
+  function finish(place, nearby, kwRaw, trRaw, ageSet, demo, evRaw) {
+    var area = parseArea(place);
+    var type = classifyArea(nearby);
+    var kw = analyzeKeywords(kwRaw, area, place);
+    var trend = analyzeTrend(trRaw);
+    var r = { place: place, area: area, nearby: nearby, type: type, kwRaw: kwRaw, kw: kw, trRaw: trRaw, trend: trend,
+      ageSet: ageSet, demo: demo, checkedAt: todayStr() };
+    r.posts = buildPosts({ area: area, kw: kw, trend: trend, type: type });
+    r.evRaw = evRaw || null;
+    var evVol = null;
+    if (evRaw && evRaw.ok) { evVol = {}; evRaw.list.forEach(function (k) { evVol[k.kw.replace(/\s+/g, '')] = k; }); }
+    r.roadmap = buildRoadmap(area, type, evVol);
+    r.weeks = buildWeeks(r.roadmap, area, type, r.posts);
+    return r;
+  }
+
+  function runDemo() {
+    var nb = DEMO.nearby;
+    var type = classifyArea(nb);
+    var age = type ? type.ageSet : 'all';
+    setReport(finish(DEMO.place, nb, DEMO.keywords, demoTrend(age), age, true, demoEventVolumes()));
+    go('report');
+  }
+
+  function search(q) {
+    setError(''); setQuery(q);
+    var recent = [q].concat((settings.recent || []).filter(function (x) { return x !== q; })).slice(0, 6);
+    var ns = Object.assign({}, settings, { recent: recent }); setSettings(ns); saveSettings(ns);
+    setLoadingName(q); setStatus({}); go('loading');
+    apiCall(settings, '/place?q=' + encodeURIComponent(q)).then(function (r) {
+      if (!r.ok) { setError(r.error || '매장을 찾지 못했습니다'); setScreen('home'); return; }
+      if (!r.items.length) { setError('"' + q + '"로 찾은 매장이 없습니다. 지점명까지 넣어 보세요. 예: SKT 다사점'); setScreen('home'); return; }
+      if (r.items.length === 1) { analyze(r.items[0]); return; }
+      setPicks(r.items); setScreen('pick');
+    });
+  }
+
+  function analyze(place) {
+    setLoadingName(place.name);
+    setStatus({ place: 'done' }); setScreen('loading');
+    var area = parseArea(place);
+    var st = { place: 'done' };
+    function mark(k, ok) { st = Object.assign({}, st); st[k] = ok ? 'done' : 'fail'; setStatus(st); }
+    var pNear = apiCall(settings, '/nearby?lng=' + place.lng + '&lat=' + place.lat + '&radius=' + CONFIG.radius)
+      .then(function (r) { mark('nearby', r.ok); return r; });
+    var pKw = apiCall(settings, '/keywords?hints=' + encodeURIComponent(makeHints(place, area).join(',')))
+      .then(function (r) { mark('keywords', r.ok); return r; });
+    var pEv = apiCall(settings, '/keywords?hints=' + encodeURIComponent(upcomingEventHints().join(',')));
+    Promise.all([pNear, pKw, pEv]).then(function (res) {
+      var type = classifyArea(res[0]);
+      var age = type ? type.ageSet : 'all';
+      return fetchTrend(age).then(function (tr) {
+        mark('trend', tr.ok);
+        setReport(finish(place, res[0], res[1], tr, age, false, res[2]));
+        setScreen('report');
+      });
+    });
+  }
+
+  function fetchTrend(ageId) {
+    var set = CONFIG.ageSets.filter(function (a) { return a.id === ageId; })[0] || CONFIG.ageSets[0];
+    var range = trendRange(CONFIG.trendMonths);
+    return apiCall(settings, '/trend', { startDate: range.startDate, endDate: range.endDate, timeUnit: 'month',
+      groups: CONFIG.trendGroups, ages: set.ages });
+  }
+
+  function changeAge(ageId) {
+    if (!report) return;
+    if (report.demo) {
+      setReport(finish(report.place, report.nearby, report.kwRaw, demoTrend(ageId), ageId, true, report.evRaw));
+      return;
+    }
+    flash('트렌드를 다시 불러옵니다');
+    fetchTrend(ageId).then(function (tr) {
+      setReport(finish(report.place, report.nearby, report.kwRaw, tr, ageId, false, report.evRaw));
+    });
+  }
+
+  function back() {
+    if (screen === 'home') return;
+    setScreen('home');
+  }
+
+  var titles = { pick: '매장 고르기', loading: '분석 중', report: '매장 리포트' };
+  return e(React.Fragment, null,
+    screen !== 'home' ? e('div', { className: 'navbar' },
+      e('button', { onClick: back, 'aria-label': '뒤로' }, '‹'),
+      e('h1', null, titles[screen]),
+      e('button', { onClick: function () { setShowSettings(true); }, 'aria-label': '서버 설정', style: { fontSize: 18 } }, '⚙')) : null,
+    screen === 'home' ? e(React.Fragment, null,
+      error ? e('div', { className: 'page', style: { paddingBottom: 0 } }, e('div', { className: 'err' }, error)) : null,
+      e(Home, { settings: settings, onSearch: search, onDemo: runDemo, onSettings: function () { setShowSettings(true); } })) : null,
+    screen === 'pick' ? e(Pick, { query: query, items: picks, onPick: analyze }) : null,
+    screen === 'loading' ? e(Loading, { status: status, name: loadingName }) : null,
+    screen === 'report' && report ? e(Report, { report: report, onCopy: onCopy, onAge: changeAge, onBack: function () { setScreen('home'); } }) : null,
+    showSettings ? e(SettingsSheet, { settings: settings, onClose: function () { setShowSettings(false); },
+      onSave: function (v) { var ns = Object.assign({}, settings, v); setSettings(ns); saveSettings(ns); setShowSettings(false); flash(v.workerUrl ? '서버 주소를 저장했습니다' : '예시 모드로 바꿨습니다'); } }) : null,
+    toast ? e('div', { className: 'toast' }, toast) : null
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(e(App));
+</script>
+</body>
+</html>
