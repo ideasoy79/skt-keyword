@@ -108,6 +108,8 @@
   .task{display:flex;gap:10px;padding:9px 0;border-top:1px solid #eeece6;font-size:14px;line-height:1.55}
   .task:first-of-type{margin-top:8px}
   .task .tk{flex:none;width:76px;font-size:12px;font-weight:700;color:var(--accent);padding-top:2px}
+  .sheet textarea{width:100%;padding:12px 14px;border:1.5px solid var(--line);border-radius:12px;font-size:15px;font-family:inherit;line-height:1.5;resize:vertical}
+  .promptpre{white-space:pre-wrap;word-break:break-all;max-height:260px;overflow:auto;background:#fff;border:1px solid var(--line);border-radius:10px;padding:10px;font-size:12px;line-height:1.55;font-family:inherit;margin:6px 0 0}
   .legend{display:flex;flex-wrap:wrap;gap:6px 12px;margin-top:10px;font-size:13px}
   .legend span.dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:5px;vertical-align:middle}
 </style>
@@ -294,6 +296,20 @@ var CONFIG = {
       post: '{area} 새 아이폰, 사전예약 전에 확인할 것', store: '기존 아이폰 보상 안내 준비', smartplace: '출시일 소식', crm: '아이폰 사용 2년 이상 고객 안내' }
   ],
   /* 광고성 문자·카톡 보낼 때 지킬 것 (정보통신망법상 광고성 정보 전송 규정 요지) */
+  /* AI 붙여넣기 프롬프트 — 대표님 skt-store-blog 스킬 규칙을 그대로 옮김 */
+  promptKit: {
+    formats: [
+      { id: 'news', label: '스마트플레이스 새소식', length: '400~600자 (모바일에서 스크롤 없이 읽히는 길이)' },
+      { id: 'blog', label: '네이버 블로그', length: '1,500~2,000자' }
+    ],
+    purposes: ['방문 유도', '전화·채팅 상담 유도', '이벤트 홍보', '신제품 안내'],
+    tones: ['친근한 동네 매장', '차분한 전문 상담', '짧고 경쾌하게'],
+    aiLinks: [
+      { label: 'ChatGPT에서 열기', url: 'https://chatgpt.com/?q=' },
+      { label: 'Claude에서 열기', url: 'https://claude.ai/new?q=' }
+    ],
+    maxUrlPrompt: 6000          // 이보다 길면 주소에 담지 않고 복사만 한다
+  },
   crmRule: '광고성 문자는 수신 동의한 고객에게만, 맨 앞에 (광고) 표기와 수신거부 방법을 넣고, 밤 9시~아침 8시에는 보내지 않습니다.',
 
   guides: [
@@ -889,6 +905,7 @@ function Report(props) {
   var R = props.report;
   var area = R.area, kw = R.kw, type = R.type, nb = R.nearby, tr = R.trend;
   var hs = useState(null); var hi = hs[0], setHi = hs[1];
+  var pw = useState(null); var writing = pw[0], setWriting = pw[1];
   var checked = R.checkedAt;
   var refs = { area: useRef(null), kw: useRef(null), trend: useRef(null), posts: useRef(null), road: useRef(null), weeks: useRef(null), guide: useRef(null) };
   function jump(k) { if (refs[k].current) window.scrollTo({ top: refs[k].current.getBoundingClientRect().top + window.scrollY - 110, behavior: 'smooth' }); }
@@ -1017,7 +1034,9 @@ function Report(props) {
             e('div', { className: 'chips' }, p.keywords.map(function (k, j) { return e('span', { key: j, className: 'chip key' }, k); }),
               e('span', { className: 'chip' }, '올릴 때: ' + p.when)),
             e('div', { className: 'reason' }, '왜: ' + p.reason),
-            e('button', { className: 'linkbtn', onClick: function () { props.onCopy(postText(R, p), '글쓰기 메모를 복사했습니다'); } }, '이 주제로 글쓰기 메모 복사'));
+            e('div', { className: 'row', style: { marginTop: 10 } },
+              e('button', { className: 'btn small', onClick: function () { setWriting({ title: p.title, topic: p.tag + ' — ' + p.title, keywords: p.keywords, why: p.reason }); } }, 'AI로 글쓰기'),
+              e('button', { className: 'linkbtn', onClick: function () { props.onCopy(postText(R, p), '글쓰기 메모를 복사했습니다'); } }, '메모만 복사')));
         }),
         e('div', { className: 'reason' }, '복사한 메모를 블로그 작성 도구나 Claude에 붙여 넣으면 본문 초안을 바로 만들 수 있습니다. 가격·지원금은 매장에서 확인한 값만 넣으세요.')),
 
@@ -1041,7 +1060,12 @@ function Report(props) {
                   it.keywords.map(function (k, j) {
                     return e('span', { key: j, className: 'chip' }, k.kw + (k.v ? ' · 월 ' + fmt(k.v.total) : ''));
                   })),
-                e('div', { className: 'reason' }, '새소식 ' + mdw(it.postDate) + ' 게시 안: ' + fillArea(it.ev.post, R.area)));
+                e('div', { className: 'reason' }, '새소식 ' + mdw(it.postDate) + ' 게시 안: ' + fillArea(it.ev.post, R.area)),
+                e('button', { className: 'linkbtn', style: { paddingBottom: 0 }, onClick: function () {
+                  setWriting({ title: fillArea(it.ev.post, R.area), topic: it.ev.name + ' (' + (it.approx ? '통상 ' + it.ev.typical : mdw(it.date)) + ')',
+                    keywords: [it.localKw].concat(it.ev.keywords.slice(0, 2)), why: it.ev.name + ' 준비 기간, ' + mdw(it.postDate) + ' 게시 예정',
+                    purpose: it.ev.id === 'galaxy-s' || it.ev.id === 'iphone' || it.ev.id === 'foldable' ? '신제품 안내' : '이벤트 홍보' });
+                } }, 'AI로 글쓰기'));
             }));
         }),
         R.roadmap.unknown.length ? e('div', { className: 'notice' }, '날짜를 아직 넣지 않은 이벤트: ' + R.roadmap.unknown.join(', ') + '. 확정 날짜를 확인해 CONFIG에 넣으면 로드맵에 나타납니다.') : null,
@@ -1078,7 +1102,138 @@ function Report(props) {
       e('button', { className: 'btn block', onClick: function () { props.onCopy(reportText(R), '리포트 전체를 복사했습니다'); } }, '리포트 전체 복사'),
       e('div', { style: { height: 10 } }),
       e('button', { className: 'btn ghost block', onClick: props.onBack }, '다른 매장 보기'),
-      e(Footer, null)));
+      e(Footer, null)),
+    writing ? e(PromptSheet, { report: R, item: writing, onCopy: props.onCopy, onClose: function () { setWriting(null); } }) : null);
+}
+
+/* ------------------------------------------------------------------
+   AI 붙여넣기 프롬프트 — 앱은 AI를 부르지 않는다. 사용자가 자기 AI에 붙여 넣는다
+------------------------------------------------------------------ */
+function buildPrompt(R, item, o) {
+  var news = o.format === 'news';
+  var place = R.place;
+  var kwMain = item.keywords[0] || (R.area.label + '휴대폰');
+  var kwSub = item.keywords.slice(1).filter(function (k) { return k && k !== kwMain; });
+  var reps = R.kw && R.kw.reps ? R.kw.reps.map(function (k) { return k.kw + '(월 ' + fmt(k.total) + '회)'; }) : [];
+  var L = [];
+  L.push('너는 SKT 직영점의 온라인 마케팅 담당자이자 네이버 ' + (news ? '스마트플레이스 운영' : '블로그 운영') + ' 전문가야. 아래 정보로 ' + (news ? '스마트플레이스 새소식' : '네이버 블로그 글') + ' 1편을 써 줘. 결과는 수정 없이 바로 붙여 넣을 수 있는 완성본이어야 해.');
+  L.push('');
+  L.push('## 매장 정보');
+  L.push('- 매장: ' + place.name);
+  L.push('- 동네: ' + R.area.label + (R.area.sigungu && R.area.sigungu !== R.area.label ? ' (' + R.area.sigungu + ')' : ''));
+  if (R.type) L.push('- 상권: ' + R.type.name + ' — ' + R.type.tip);
+  if (o.tel) L.push('- 연락처: ' + o.tel);
+  if (o.hours) L.push('- 영업시간: ' + o.hours);
+  L.push('');
+  L.push('## 이번 글');
+  L.push('- 주제: ' + item.topic);
+  L.push('- 제목 방향: ' + item.title + ' (그대로 쓰지 말고 다듬어도 됨)');
+  L.push('- 목적: ' + o.purpose);
+  L.push('- 말투: ' + o.tone + ', 실제 직원이 안내하듯 친절한 존댓말');
+  L.push('- 분량: ' + (news ? CONFIG.promptKit.formats[0].length : CONFIG.promptKit.formats[1].length));
+  if (item.why) L.push('- 이 주제를 고른 이유(참고만, 본문에 쓰지 말 것): ' + item.why);
+  L.push('');
+  L.push('## 키워드 (네이버 검색 노출용)');
+  L.push('- 핵심 키워드: ' + kwMain + ' → 제목 앞부분에 1회, 본문 첫 문단에 1회');
+  if (kwSub.length) L.push('- 보조 키워드: ' + kwSub.join(', ') + ' → 본문에 자연스럽게 각 1회');
+  if (!news && reps.length) L.push('- 동네 검색어 참고(실제 월간 검색수): ' + reps.join(', ') + ' → 억지로 다 넣지 말고 2~3개만');
+  L.push('- 같은 키워드를 3회 넘게 반복하지 말 것');
+  L.push('');
+  L.push('## 확인된 사실 (여기 적힌 것만 숫자·혜택으로 쓸 수 있음)');
+  L.push(o.facts && o.facts.trim() ? o.facts.trim() : '- 없음. 가격·할인·지원금·사은품·기간은 하나도 쓰지 말고 "자세한 내용은 매장에서 확인해 주세요"로 안내');
+  L.push('- 사진을 함께 올렸다면 사진에 실제로 보이는 정보만 추가로 써도 됨. 사진끼리 숫자가 다르면 쓰지 말고 나에게 물어볼 것');
+  L.push('');
+  L.push('## 통신 광고 표현 규칙 (반드시)');
+  L.push('- "공짜", "0원", "완납", "성지" 같은 표현은 쓰지 않는다. 조건부 혜택은 조건을 함께 적을 수 있을 때만');
+  L.push('- 공시지원금과 선택약정할인을 섞어 오해를 주는 표현 금지');
+  L.push('- 확정되지 않은 수치는 쓰지 않는다. 애매하면 과장하지 않는 쪽');
+  L.push('- 전화번호·영업시간은 위 매장 정보에 있을 때만 쓴다');
+  L.push('');
+  if (news) {
+    L.push('## 구성 (순서 고정)');
+    L.push('① 고객 공감 한 문장(흔한 문장 말고 새로) → ② 혜택 안내(확인된 사실 안에서만) → ③ 핵심 내용 ✔ 3~5개 → ④ 이런 분께 추천 ✔ 2~4개 → ⑤ CTA');
+    L.push('- 제목 15~30자, 1개만, 이모지 최대 1개');
+    L.push('- 본문 이모지는 문단마다 1개 정도, 전체 3~6개, 같은 이모지 반복 금지');
+    L.push('- CTA는 강매 없이 "' + o.purpose + '"에 맞게');
+    L.push('');
+    L.push('## 출력 형식 (이것만 출력)');
+    L.push('[제목]');
+    L.push('(제목 1개)');
+    L.push('');
+    L.push('[새소식]');
+    L.push('(본문)');
+    L.push('');
+    L.push('[CTA]');
+    L.push('(행동 유도 문구)');
+  } else {
+    L.push('## 구성');
+    L.push('- 도입: 고객이 실제로 하는 고민 한 장면으로 시작 (동네 이름 1회)');
+    L.push('- 소제목 3~4개, 각 소제목 아래 짧은 문단과 ✔ 목록');
+    L.push('- 사진이 들어갈 자리마다 [사진: 무엇을 찍을지] 를 한 줄로 표시 (총 4~6곳, 매장 실물 위주)');
+    L.push('- 마지막: 매장 방문·상담 안내와 CTA');
+    L.push('- 문장은 짧게, AI가 쓴 티 나는 표현·광고 문구 남발 금지');
+    L.push('');
+    L.push('## 출력 형식 (이것만 출력)');
+    L.push('[제목]');
+    L.push('(제목 1개, 30자 안팎)');
+    L.push('');
+    L.push('[본문]');
+    L.push('(소제목과 [사진: ] 표시 포함)');
+    L.push('');
+    L.push('[해시태그]');
+    L.push('(5~8개, 동네 이름 포함 1개 이상)');
+  }
+  L.push('');
+  L.push('작성 과정 설명, 제목 후보 여러 개, 수정 제안, "AI가 작성했다"는 말은 출력하지 마.');
+  return L.join('\n');
+}
+
+function PromptSheet(props) {
+  var K = CONFIG.promptKit, R = props.report, item = props.item;
+  var saved = loadSettings();
+  var sf = useState(props.defaultFormat || 'news'); var format = sf[0], setFormat = sf[1];
+  var sp = useState(item.purpose || K.purposes[0]); var purpose = sp[0], setPurpose = sp[1];
+  var st = useState(K.tones[0]); var tone = st[0], setTone = st[1];
+  var sx = useState(''); var facts = sx[0], setFacts = sx[1];
+  var stel = useState(saved.tel || ''); var tel = stel[0], setTel = stel[1];
+  var shr = useState(saved.hours || ''); var hours = shr[0], setHours = shr[1];
+  var sv = useState(false); var showPrev = sv[0], setShowPrev = sv[1];
+  var prompt = buildPrompt(R, item, { format: format, purpose: purpose, tone: tone, facts: facts, tel: tel, hours: hours });
+  function remember() { var ns = Object.assign(loadSettings(), { tel: tel, hours: hours }); saveSettings(ns); }
+  function chipRow(list, val, set, key) {
+    return e('div', { className: 'chips' }, list.map(function (x) {
+      var id = typeof x === 'string' ? x : x.id, lab = typeof x === 'string' ? x : x.label;
+      return e('button', { key: key + id, className: 'chip' + (val === id ? ' on' : ''), onClick: function () { set(id); } }, lab);
+    }));
+  }
+  return e('div', { className: 'backdrop', onClick: props.onClose },
+    e('div', { className: 'sheet', onClick: function (ev) { ev.stopPropagation(); } },
+      e('h3', null, 'AI로 글쓰기'),
+      e('div', { className: 'muted', style: { fontSize: 14, lineHeight: 1.6 } }, '“' + item.title + '”'),
+      e('label', null, '어디에 올릴 글인가요'), chipRow(K.formats, format, setFormat, 'f'),
+      e('label', null, '목적'), chipRow(K.purposes, purpose, setPurpose, 'p'),
+      e('label', null, '말투'), chipRow(K.tones, tone, setTone, 't'),
+      e('label', null, '확인된 혜택·가격 (선택)'),
+      e('textarea', { value: facts, onChange: function (ev) { setFacts(ev.target.value); }, rows: 3,
+        placeholder: '예: 11/30까지 방문 상담 고객 케이스 증정 (매장 자체)\n비워 두면 AI가 가격·혜택을 아예 쓰지 않습니다' }),
+      e('div', { className: 'row', style: { gap: 8 } },
+        e('div', { style: { flex: 1 } }, e('label', null, '연락처 (선택)'), e('input', { value: tel, onChange: function (ev) { setTel(ev.target.value); }, onBlur: remember, inputMode: 'tel', placeholder: '053-000-0000' })),
+        e('div', { style: { flex: 1 } }, e('label', null, '영업시간 (선택)'), e('input', { value: hours, onChange: function (ev) { setHours(ev.target.value); }, onBlur: remember, placeholder: '평일 10~20시' }))),
+      e('div', { className: 'muted', style: { fontSize: 12, marginTop: 6 } }, '연락처·영업시간은 이 기기에만 저장되어 다음에도 채워집니다.'),
+      e('div', { className: 'card', style: { marginTop: 14, fontSize: 13, lineHeight: 1.7 } },
+        e('div', null, e('b', null, '들어가는 것 '), '매장·상권, 핵심 키워드 ', e('b', null, item.keywords[0] || ''), ', 키워드 배치 규칙, 통신 광고 금지 표현, 구성 순서, 출력 형식'),
+        e('button', { className: 'linkbtn', style: { padding: '6px 0', minHeight: 0 }, onClick: function () { setShowPrev(!showPrev); } }, showPrev ? '프롬프트 접기' : '프롬프트 전체 보기'),
+        showPrev ? e('pre', { className: 'promptpre' }, prompt) : null),
+      e('button', { className: 'btn block', style: { marginTop: 4 }, onClick: function () { remember(); props.onCopy(prompt, '프롬프트를 복사했습니다. AI 채팅창에 붙여 넣으세요'); } }, '프롬프트 복사'),
+      e('div', { className: 'row', style: { marginTop: 8 } }, K.aiLinks.map(function (a, i) {
+        var tooLong = encodeURIComponent(prompt).length > K.maxUrlPrompt * 3;
+        return e('a', { key: i, className: 'btn ghost small', style: { flex: 1 }, target: '_blank', rel: 'noopener',
+          href: tooLong ? a.url.split('?')[0] : a.url + encodeURIComponent(prompt),
+          onClick: function () { remember(); props.onCopy(prompt, '복사도 해 두었습니다'); } }, a.label);
+      })),
+      e('div', { className: 'muted', style: { fontSize: 12, lineHeight: 1.6, marginTop: 10 } },
+        '열기 버튼은 프롬프트를 채운 채로 새 창을 엽니다. 안 채워지면 그냥 붙여 넣으세요(이미 복사됨). 매장 사진을 같이 올리면 사진 속 정보까지 반영합니다.'),
+      e('button', { className: 'linkbtn', style: { width: '100%' }, onClick: props.onClose }, '닫기')));
 }
 
 function postText(R, p) {
